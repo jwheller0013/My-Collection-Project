@@ -6,7 +6,7 @@ def create_app():
     app.config.from_object('config.Config')
     app.register_blueprint(rt)
 
-    from My_Collection import db
+    from models import db
     db.init_app(app)
     with app.app_context():
         db.create_all()

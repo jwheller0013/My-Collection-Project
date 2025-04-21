@@ -1,4 +1,4 @@
-from .My_Collection import User
+from models import User
 
 import re
 

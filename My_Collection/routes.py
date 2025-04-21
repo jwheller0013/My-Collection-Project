@@ -1,12 +1,14 @@
 from flask_login import current_user, login_user, logout_user
+from flask import render_template, request, redirect, url_for, flash, session
 from flask_login.utils import login_required
 from flask import Blueprint, render_template, request, redirect, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 from user import username_taken, email_taken, valid_username, valid_password
-from My_Collection import User, Collection, Entry, Media, db
+from models import User, Collection, Entry, Media, db
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
-rt = Blueprint('routes', __name__, template_folder='templates')
+rt = Blueprint('routes', __name__)
 
 @rt.route('/action_login', methods=['POST'])
 def action_login():

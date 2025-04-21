@@ -5,7 +5,7 @@ from flask_login import UserMixin
 from flask import render_template
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from . import create_app
+from __init__ import create_app
 app = create_app()
 socketio = SocketIO(app)
 
