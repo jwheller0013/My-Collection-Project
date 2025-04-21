@@ -4,7 +4,7 @@ basedir = path.abspath(path.dirname(__file__))
 
 class Config:
     SECRET_KEY = 'james'
-    FLASK_APP = 'My_Collection'
+    FLASK_APP = 'My-Collection-Project'
 
     SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:PASSWORD@localhost:3306/collection'
 

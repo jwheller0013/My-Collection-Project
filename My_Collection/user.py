@@ -1,5 +1,5 @@
-from models import User
-
+from .My_Collection.models import User
+from . import db
 import re
 
 ##

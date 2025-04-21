@@ -1,19 +1,7 @@
 #SQL Alchemy and SQL Lite
-from flask_socketio import SocketIO
-from flask_login import LoginManager
 from flask_login import UserMixin
-from flask import render_template
 from werkzeug.security import generate_password_hash, check_password_hash
-
-from __init__ import create_app
-app = create_app()
-socketio = SocketIO(app)
-
-from flask_sqlalchemy import SQLAlchemy
-db = SQLAlchemy()
-
-if __name__ == '__main__':
-    socketio.run(app,port=5555, debug=True)
+from .. import db
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -50,13 +38,3 @@ class Media(Entry):
         self.genre = genre #from what I have seen this is a large list of booleans
         self.rating = rating
         self.link = link #IMDb link
-
-login_manager = LoginManager()
-login_manager.init_app(app)
-
-@login_manager.user_loader
-def load_user(userid):
-    return User.query.get(userid)
-
-with app.app_context():
-    db.create_all()

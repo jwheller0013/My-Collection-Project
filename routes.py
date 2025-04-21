@@ -1,10 +1,9 @@
-from flask_login import current_user, login_user, logout_user
-from flask import render_template, request, redirect, url_for, flash, session
-from flask_login.utils import login_required
-from flask import Blueprint, render_template, request, redirect, url_for
-from werkzeug.security import generate_password_hash, check_password_hash
-from user import username_taken, email_taken, valid_username, valid_password
-from models import User, Collection, Entry, Media, db
+from flask import render_template, request, redirect, url_for, flash, session, Blueprint
+from flask_login import current_user, login_user, logout_user, login_required
+from werkzeug.security import check_password_hash
+from .My_Collection.user import username_taken, email_taken, valid_username, valid_password
+from .My_Collection.models import User, Collection, Entry, Media
+from . import db
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
