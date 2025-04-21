@@ -1,6 +1,6 @@
-# export PORT=5006
+#!/bin/bash
+export FLASK_APP=app.py
+export FLASK_ENV=development
 export SECRET_KEY="james"
-# honcho start
 
-# you can ALSO or RATHER use the following command to run the app
-cd ./My_Collection; flask run
+python app.py

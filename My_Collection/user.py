@@ -1,5 +1,4 @@
-from models import User
-from .. import db
+from .models import User, db
 import re
 
 ##

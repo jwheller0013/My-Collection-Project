@@ -3,7 +3,7 @@ from flask_login import LoginManager
 from My_Collection.models import db, User
 from flask_socketio import SocketIO
 
-from . import create_app
+from My_Collection import create_app
 app = create_app()
 socketio = SocketIO(app)
 
