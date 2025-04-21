@@ -1,5 +1,5 @@
 from flask import Flask
-from forum.routes import rt
+from routes import rt
 
 def create_app():
     app = Flask(__name__, instance_relative_config=False)
