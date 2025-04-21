@@ -2,7 +2,8 @@ from flask_login import current_user, login_user, logout_user
 from flask_login.utils import login_required
 from flask import Blueprint, render_template, request, redirect, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
-from user import username_taken, email_taken, valid_username
+from user import username_taken, email_taken, valid_username, valid_password
+from My_Collection import User, Collection, Entry, Media, db
 
 
 rt = Blueprint('routes', __name__, template_folder='templates')

@@ -1,7 +1,9 @@
 #SQL Alchemy and SQL Lite
 from flask_socketio import SocketIO
 from flask_login import LoginManager
+from flask_login import UserMixin
 from flask import render_template
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from . import create_app
 app = create_app()
