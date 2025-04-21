@@ -1,5 +1,5 @@
-from .My_Collection.models import User
-from . import db
+from models import User
+from .. import db
 import re
 
 ##
@@ -16,7 +16,7 @@ def valid_username(username):
 	#username is not taken and does meet the password requirements
 	return True
 def valid_password(password):
-	return password_regex.match(password)
+	return bool(password_regex.match(password))
 
 def username_taken(username):
 	return User.query.filter(User.username == username).first()
