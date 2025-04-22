@@ -1,10 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'layout.html' %}
+{% block body %}
+{{ path|safe }}
+    {% if current_user.is_authenticated %}
+        <h1> Your Collection</h1>
+        <h2>Search Bar</h2>
+        <h3>Category Things</h3>
+        <h4>List of Collection</h4>
+        <h5>Random from List and Sort</h5>
 
-</body>
-</html>
+    {% else %}
+    <a href="/loginform">Click here to login or register!</a>
+    {% endif %}
+
+{% endblock %}
