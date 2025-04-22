@@ -1,4 +1,4 @@
-from .models import User, db
+from models import User, db
 import re
 
 ##
