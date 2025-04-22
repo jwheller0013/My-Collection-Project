@@ -69,7 +69,7 @@ def init_routes(app):
         return render_template("/Scanner.html")
 
     @app.route('/Scan_Results')
-    def collection():
+    def scan_results():
         return render_template("/Scan_Results.html")
 
     @app.route('/Collection')
