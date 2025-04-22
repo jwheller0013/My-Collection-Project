@@ -21,6 +21,11 @@ def action_login():
         return render_template("login.html", errors=errors)
     return redirect("/")
 
+@rt.route('/action_logout')
+def action_logout():
+    logout_user()
+    return redirect("/")
+
 @rt.route('/action_createaccount', methods=['POST'])
 def action_createaccount():
     username = request.form['username']

@@ -8,8 +8,8 @@ app = create_app()
 socketio = SocketIO(app)
 
 
-app.config['SITE_NAME'] = 'Something, Anything, that is not that'
-app.config['SITE_DESCRIPTION'] = 'a forum for Data to learn from'
+app.config['SITE_NAME'] = 'My Collection'
+app.config['SITE_DESCRIPTION'] = 'A database of your movies and shows!'
 app.config['FLASK_DEBUG'] = 1
 
 if __name__ == '__main__':
