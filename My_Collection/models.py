@@ -35,7 +35,7 @@ class Collection(db.Model):
     collection_title = db.Column(db.String(64))
 
     def __init__(self, title):
-        self.title = title
+        self.collection_title = title
 
     def to_dict(self):
         return {

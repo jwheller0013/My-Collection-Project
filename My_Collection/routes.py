@@ -84,7 +84,7 @@ def init_routes(app):
     @login_required
     def collection():
         collections = Collection.query.filter_by(user_id=current_user.id).all()
-        return render_template("/Collection.html", collections=collections)
+        return render_template("/Collection.html", collections=collections, selected_collection=None)
 
     @app.route('/Entry')
     @login_required
@@ -113,8 +113,50 @@ def init_routes(app):
     def create_collection():
         if request.method == 'POST':
             title = request.form['collection_title']
-            new_collection = Collection(title=title, user_id=current_user.id)
+            new_collection = Collection(title=title)
+            new_collection.user_id = current_user.id
             db.session.add(new_collection)
             db.session.commit()
             return redirect('/Collection')
         return render_template('create_collection.html')
+
+    @app.route('/delete_collection/<int:collection_id>', methods=['POST'])
+    @login_required
+    def delete_collection(collection_id):
+        collection_to_delete = Collection.query.get_or_404(collection_id)
+
+        if collection_to_delete.user_id != current_user.id:
+            abort(403)  # Forbidden
+
+        Entry.query.filter_by(collection_id=collection_to_delete.id).delete()
+
+        db.session.delete(collection_to_delete)
+        db.session.commit()
+
+        return redirect('/Collection')
+
+    @app.route('/collection/<int:collection_id>')
+    @login_required
+    def view_collection(collection_id):
+        selected_collection = Collection.query.get_or_404(collection_id)
+
+        if selected_collection.user_id != current_user.id:
+            return "Unauthorized", 403
+
+        genre_filter = request.args.get('genre')
+
+        all_entries = Media.query.filter_by(collection_id=selected_collection.id).all()
+        filtered_entries = all_entries
+
+        if genre_filter and genre_filter != "":
+            filtered_entries = [entry for entry in all_entries if entry.genre == genre_filter]
+
+        # Get unique genres for the filter dropdown
+        unique_genres = sorted(list(set(entry.genre for entry in all_entries if entry.genre)))
+
+        collections = Collection.query.filter_by(user_id=current_user.id).all()
+        return render_template("/Collection.html",
+                               collections=collections,
+                               selected_collection=selected_collection,
+                               filtered_entries=filtered_entries,
+                               unique_genres=unique_genres)
