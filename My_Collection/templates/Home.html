@@ -2,9 +2,9 @@
 {% block body %}
 {{ path|safe }}
     {% if current_user.is_authenticated %}
-        <h1>Scan</h1>
-        <h2>Collection</h2>
-        <h3>Random</h3>
+        <h1>Scan</h1><a href="/Scanner">Scan</a>
+        <h1>Collection</h1><a href="/Collection">Scan</a>
+        <h1>Random</h1><a href="/Entry">Random</a>
 
     {% else %}
     <a href="/loginform">Click here to login or register!</a>
