@@ -64,3 +64,20 @@ def init_routes(app):
     def loginform():
         return render_template("login.html")
 
+    @app.route('/Scanner')
+    def scanner():
+        return render_template("/Scanner.html")
+
+    @app.route('/Scan_Results')
+    def collection():
+        return render_template("/Scan_Results.html")
+
+    @app.route('/Collection')
+    def collection():
+        return render_template("/Collection.html")
+
+    @app.route('/Entry')
+    def entry():
+        return render_template("/Entry.html")
+
+
