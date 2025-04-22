@@ -1,0 +1,16 @@
+{% extends 'layout.html' %}
+{% block body %}
+    {% if current_user.is_authenticated %}
+        <h1>Create a New Collection</h1>
+        <form method="POST" action="/create_collection">
+            <div>
+                <label for="collection_title">Collection Title:</label>
+                <input type="text" id="collection_title" name="collection_title" required>
+            </div>
+            <button type="submit">Create Collection</button>
+        </form>
+        <p><a href="/Collection">Back to My Collections</a></p>
+    {% else %}
+        <a href="/loginform">Please log in to create a collection.</a>
+    {% endif %}
+{% endblock %}

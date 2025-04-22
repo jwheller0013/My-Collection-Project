@@ -62,14 +62,16 @@ class Media(Entry):
     genre = db.Column(db.String(100))
     rating = db.Column(db.Float)
     link = db.Column(db.String(255))
+    upc = db.Column(db.String(20), unique=True, nullable=True)
 
-    def __init__(self, title, tv_film, genre, rating, link):
+    def __init__(self, title, tv_film, genre, rating, link, upc=None):
         super().__init__() # Call the __init__ of the parent class (Entry)
         self.title = title
         self.tv_film = tv_film #can be a boolean i.e. 0=tv 1=movie
         self.genre = genre #from what I have seen this is a large list of booleans refer to excel for list
         self.rating = rating
         self.link = link #IMDb link
+        self.upc = upc
 
     def to_dict(self):
         base_dict = super().to_dict()
@@ -79,7 +81,8 @@ class Media(Entry):
             'tv_film': self.tv_film,
             'genre': self.genre,
             'rating': self.rating,
-            'link': self.link
+            'link': self.link,
+            'upc': self.upc
         }
 
 

@@ -2,9 +2,15 @@
 {% block body %}
 {{ path|safe }}
     {% if current_user.is_authenticated %}
-        <h1> Please Scan</h1>
+        <h1> Please Scan or Enter UPC</h1>
         <h2>Camera Screen</h2>
         <h3><a href="/Scan_Results">Camera Button</a></h3>
+        <h2>Enter UPC Manually</h2>
+        <form method="POST" action="/add_media_by_upc">
+            <label for="upc">UPC:</label>
+            <input type="text" id="upc" name="upc" required>
+            <button type="submit">Add by UPC</button>
+        </form>
 
     {% else %}
     <a href="/loginform">Click here to login or register!</a>

@@ -2,7 +2,13 @@
 {% block body %}
 {{ path|safe }}
     {% if current_user.is_authenticated %}
-        <h1> Your Collection</h1>
+        <h1>My Collections</h1>
+        <ul>
+            {% for collection in collections %}
+                <li><a href="/collection/{{ collection.id }}">{{ collection.collection_title }}</a></li>
+            {% endfor %}
+        </ul>
+        <p><a href="/create_collection">Create New Collection</a></p>
         <h2>Search Bar</h2>
         <h3>Category Things</h3>
         <h4>List of Collection</h4>

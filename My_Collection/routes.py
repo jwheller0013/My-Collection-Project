@@ -57,6 +57,12 @@ def init_routes(app):
             user.admin = True
         db.session.add(user)
         db.session.commit()
+
+        default_collection = Collection(title="My Collection")
+        default_collection.user_id = user.id
+        db.session.add(default_collection)
+        db.session.commit()
+
         login_user(user)
         return redirect("/")
 
@@ -65,19 +71,50 @@ def init_routes(app):
         return render_template("login.html")
 
     @app.route('/Scanner')
+    @login_required
     def scanner():
         return render_template("/Scanner.html")
 
     @app.route('/Scan_Results')
+    @login_required
     def scan_results():
         return render_template("/Scan_Results.html")
 
     @app.route('/Collection')
+    @login_required
     def collection():
-        return render_template("/Collection.html")
+        collections = Collection.query.filter_by(user_id=current_user.id).all()
+        return render_template("/Collection.html", collections=collections)
 
     @app.route('/Entry')
+    @login_required
     def entry():
         return render_template("/Entry.html")
 
+    @app.route('/add_media_by_upc', methods=['POST'])
+    @login_required
+    def add_media_by_upc():
+        upc = request.form['upc']
 
+        new_media = Media(
+            title=f"Item with UPC: {upc}",  # Placeholder title
+            tv_film=None,
+            genre=None,
+            rating=None,
+            link=None,
+            upc=upc
+        )
+        db.session.add(new_media)
+        db.session.commit()
+        return redirect('/Scan_Results')
+
+    @app.route('/create_collection', methods=['GET', 'POST'])
+    @login_required
+    def create_collection():
+        if request.method == 'POST':
+            title = request.form['collection_title']
+            new_collection = Collection(title=title, user_id=current_user.id)
+            db.session.add(new_collection)
+            db.session.commit()
+            return redirect('/Collection')
+        return render_template('create_collection.html')
