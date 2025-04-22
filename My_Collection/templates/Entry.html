@@ -1,0 +1,14 @@
+{% extends 'layout.html' %}
+{% block body %}
+{{ path|safe }}
+    {% if current_user.is_authenticated %}
+        <h1> Entry Title</h1>
+        <h2>Poster Image</h2>
+        <h3>Summary</h3>
+        <h4>Link to IMDb</h4>
+
+    {% else %}
+    <a href="/loginform">Click here to login or register!</a>
+    {% endif %}
+
+{% endblock %}

@@ -41,6 +41,8 @@ class Media(Entry):
     def __init__(self, title, tv_film, genre, rating, link):
         self.title = title
         self.tv_film = tv_film #can be a boolean i.e. 0=tv 1=movie
-        self.genre = genre #from what I have seen this is a large list of booleans
+        self.genre = genre #from what I have seen this is a large list of booleans refer to excel for list
         self.rating = rating
         self.link = link #IMDb link
+
+
