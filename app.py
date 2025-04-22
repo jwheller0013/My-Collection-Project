@@ -1,19 +1,15 @@
 from flask import render_template, session
 from flask_login import LoginManager
 from My_Collection.models import db, User
-from flask_socketio import SocketIO
-
 from My_Collection import create_app
 app = create_app()
-socketio = SocketIO(app)
 
+# u1 = User("eat@joes.com","eatjoes","eateat")
+# db.session.add(u1)
 
 app.config['SITE_NAME'] = 'My Collection'
 app.config['SITE_DESCRIPTION'] = 'A database of your movies and shows!'
 app.config['FLASK_DEBUG'] = 1
-
-if __name__ == '__main__':
-    socketio.run(app,port=5555, debug=True)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -27,3 +23,5 @@ with app.app_context():
 @app.route('/')
 def index():
     return render_template("Home.html")
+
+# print (db)
