@@ -1,0 +1,13 @@
+{% extends 'layout.html' %}
+{% block body %}
+{{ path|safe }}
+    {% if current_user.is_authenticated %}
+        <h1>Scan</h1>
+        <h2>Collection</h2>
+        <h3>Random</h3>
+
+    {% else %}
+    <a href="/loginform">Click here to login or register!</a>
+    {% endif %}
+
+{% endblock %}
