@@ -1,5 +1,5 @@
 from flask import request, jsonify, render_template, redirect, abort
-from models import db, User, Collection, Entry, Media
+from models import db, User, Collection, Entry, Media, Genre
 from flask_login import current_user, login_user, logout_user, login_required
 from werkzeug.security import check_password_hash
 from user import username_taken, email_taken, valid_username, valid_password
@@ -108,7 +108,6 @@ def init_routes(app):
         new_media = Media(
             title=f"Item with UPC: {upc}",  # Placeholder title
             tv_film=None,
-            genre=None,
             rating=None,
             link=None,
             upc=upc,
@@ -154,16 +153,19 @@ def init_routes(app):
         if selected_collection.user_id != current_user.id:
             return "Unauthorized", 403
 
-        genre_filter = request.args.get('genre')
+        genre_filter_name = request.args.get('genre')
 
         all_entries = Media.query.filter_by(collection_id=selected_collection.id).all()
         filtered_entries = all_entries
 
-        if genre_filter and genre_filter != "":
-            filtered_entries = [entry for entry in all_entries if entry.genre == genre_filter]
+        if genre_filter_name and genre_filter_name != "":
+            filtered_entries = [
+                entry for entry in all_entries
+                if any(genre.name == genre_filter_name for genre in entry.genres)
+            ]
 
         # Get unique genres for the filter dropdown
-        unique_genres = sorted(list(set(entry.genre for entry in all_entries if entry.genre)))
+        unique_genres = sorted(list(set(genre.name for entry in all_entries for genre in entry.genres)))
 
         collections = Collection.query.filter_by(user_id=current_user.id).all()
         return render_template("/Collection.html",

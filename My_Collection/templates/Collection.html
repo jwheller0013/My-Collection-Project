@@ -21,7 +21,7 @@
 
             <div>
                 <label for="genre_filter">Filter by Genre:</label>
-                <select id="genre_filter" name="genre_filter">
+                <select id="genre_filter" name="genre" onchange="this.form.submit()">
                     <option value="">All Genres</option>
                     {% for genre in unique_genres %}
                         <option value="{{ genre }}">{{ genre }}</option>
@@ -33,7 +33,14 @@
                 {% if filtered_entries %}
                     <ul>
                         {% for entry in filtered_entries %}
-                            <li>{{ entry.title }} ({{ entry.genre }})
+                            <li>{{ entry.title }}
+                                {% if entry.genres %}
+                                    (Genres:
+                                    {% for genre in entry.genres %}
+                                        {{ genre.name }}{% if not loop.last %}, {% endif %}
+                                    {% endfor %}
+                                    )
+                                {% endif %}
                                 {% if entry.link %}
                                     <a href="{{ entry.link }}" target="_blank">(Link)</a>
                                 {% endif %}
