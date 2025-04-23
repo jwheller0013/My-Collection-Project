@@ -9,6 +9,7 @@
         <form method="POST" action="/add_media_by_upc">
             <label for="upc">UPC:</label>
             <input type="text" id="upc" name="upc" required>
+            <input type="hidden" name="user_id" value="{{ current_user.id }}">
             <button type="submit">Add by UPC</button>
         </form>
 

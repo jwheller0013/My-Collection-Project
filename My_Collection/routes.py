@@ -103,7 +103,7 @@ def init_routes(app):
     @login_required
     def add_media_by_upc():
         upc = request.form['upc']
-        user = current_user
+        user_id = request.form.get('user_id')
 
         new_media = Media(
             title=f"Item with UPC: {upc}",  # Placeholder title
@@ -111,7 +111,8 @@ def init_routes(app):
             genre=None,
             rating=None,
             link=None,
-            upc=upc
+            upc=upc,
+            user_id= current_user.id,
         )
         db.session.add(new_media)
         db.session.commit()
