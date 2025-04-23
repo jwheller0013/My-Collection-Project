@@ -1,4 +1,4 @@
-from flask import request, jsonify, render_template, redirect
+from flask import request, jsonify, render_template, redirect, abort
 from models import db, User, Collection, Entry, Media
 from flask_login import current_user, login_user, logout_user, login_required
 from werkzeug.security import check_password_hash
@@ -58,10 +58,10 @@ def init_routes(app):
         db.session.add(user)
         db.session.commit()
 
-        default_collection = Collection(title="My Collection")
-        default_collection.user_id = user.id
-        db.session.add(default_collection)
-        db.session.commit()
+        # default_collection = Collection(title="My Collection")
+        # default_collection.user_id = user.id
+        # db.session.add(default_collection)
+        # db.session.commit()
 
         login_user(user)
         return redirect("/")
@@ -75,10 +75,12 @@ def init_routes(app):
     def scanner():
         return render_template("/Scanner.html")
 
-    @app.route('/Scan_Results')
+    @app.route('/Scan_Results', methods=['GET', 'POST'])
     @login_required
     def scan_results():
-        return render_template("/Scan_Results.html")
+        collections = Collection.query.filter_by(user_id=current_user.id).all()
+
+        return render_template("/Scan_Results.html", collections=collections, selected_collection=None)
 
     @app.route('/Collection')
     @login_required
@@ -94,12 +96,14 @@ def init_routes(app):
     @app.route('/Sort')
     @login_required
     def sort():
-        return render_template("/Sort.html")
+        collections = Collection.query.filter_by(user_id=current_user.id).all()
+        return render_template("/Sort.html", collections=collections, selected_collection=None)
 
     @app.route('/add_media_by_upc', methods=['POST'])
     @login_required
     def add_media_by_upc():
         upc = request.form['upc']
+        user = current_user
 
         new_media = Media(
             title=f"Item with UPC: {upc}",  # Placeholder title
@@ -165,3 +169,17 @@ def init_routes(app):
                                selected_collection=selected_collection,
                                filtered_entries=filtered_entries,
                                unique_genres=unique_genres)
+
+    @app.route('/sort/<int:collection_id>')
+    @login_required
+    def show_collection_entries(collection_id):
+        selected_collection = Collection.query.get_or_404(collection_id)
+
+        if selected_collection.user_id != current_user.id:
+            abort(403)  # Forbidden
+
+        entries = Media.query.filter_by(collection_id=selected_collection.id).all()
+        collections = Collection.query.filter_by(
+            user_id=current_user.id).all()  # Keep the list of collections for navigation
+        return render_template("/sort.html", collections=collections, selected_collection=selected_collection,
+                               entries=entries)
