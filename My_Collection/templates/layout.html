@@ -7,22 +7,21 @@
 </head>
 <body>
 <div class="page">
-	<div class="header">
-		{% include 'header.html' %}
-	</div>
-	{% if errors %}
-	<div class="errors">
-	{% for error in errors %}
-		<p class="error">
-			{{ error }}
-		</p>
-
-	{% endfor %}
-	</div>
+    <div class="content">
+       {% block body %}{% endblock %}
+    </div>
+    <div class="footer">
+       {% include 'header.html' %}
+    </div>
+    {% if errors %}
+    <div class="errors">
+    {% for error in errors %}
+       <p class="error">
+          {{ error }}
+       </p>
+    {% endfor %}
+    </div>
 {% endif %}
-	<div class="content">
-		{% block body %}{% endblock %}
-	</div>
 </div>
 </body>
 

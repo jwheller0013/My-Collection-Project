@@ -91,6 +91,11 @@ def init_routes(app):
     def entry():
         return render_template("/Entry.html")
 
+    @app.route('/Sort')
+    @login_required
+    def sort():
+        return render_template("/Sort.html")
+
     @app.route('/add_media_by_upc', methods=['POST'])
     @login_required
     def add_media_by_upc():

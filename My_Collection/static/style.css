@@ -11,14 +11,45 @@
 	padding-left: 3%;
 	padding-right: 3%;
 
+	margin-bottom: 60px; /* Add margin at the bottom for fixed footer */
+    min-height: 100vh; /* Ensure full viewport height */
+    position: relative; /* For absolute positioning of the footer */
+    padding-bottom: 60px; /* Add padding at the bottom to prevent content overlap */
+    box-sizing: border-box;
+
 }
-.header{
+
+/* .header{
 	border: 5px solid black;
 	overflow: hidden;
 	vertical-align: middle;
 	padding: 3.5%;
 	margin-bottom: none;
+} */
+
+.footer{
+    border-top: 5px solid black; /* Changed from border-bottom */
+    overflow: hidden;
+    vertical-align: middle;
+    padding: 1%; /* Adjust padding as needed */
+    margin-top: 2%; /* Add some space above the footer */
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: #f8f9fa; /* Bootstrap light background (adjust as needed) */
+    color: black;
+    text-align: center;
+    box-sizing: border-box;
+    z-index: 1000;
 }
+
+.content{
+    margin-top: 0.5%;
+    padding-bottom: 70px; /* Adjust to prevent content underlapping the fixed footer */
+    box-sizing: border-box;
+}
+
 .content{
 	margin-top: 0.5%;
 }
