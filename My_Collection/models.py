@@ -79,17 +79,15 @@ class Entry(db.Model):
 class Media(Entry):
     title = db.Column(db.String(100))
     tv_film = db.Column(db.Boolean)
-    genre = db.Column(db.String(100))
     rating = db.Column(db.Float)
     link = db.Column(db.String(255))
     poster = db.Column(db.String(255))
     upc = db.Column(db.String(20), unique=True, nullable=True)
 
-    def __init__(self, title, tv_film, genre, rating, link, poster, upc=None, user_id=None, collection_id=None):
+    def __init__(self, title, tv_film, rating, link, poster, upc=None, user_id=None, collection_id=None):
         super().__init__(user_id=user_id, collection_id=collection_id) # Call the __init__ of the parent class (Entry)
         self.title = title
         self.tv_film = tv_film #can be a boolean i.e. 0=tv 1=movie
-        self.genre = genre #from what I have seen this is a large list of booleans refer to excel for list
         self.rating = rating
         self.link = link #IMDb link
         self.upc = upc
