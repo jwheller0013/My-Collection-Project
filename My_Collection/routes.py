@@ -113,6 +113,7 @@ def init_routes(app):
             link=None,
             upc=upc,
             user_id= current_user.id,
+            poster=None,
         )
         db.session.add(new_media)
         db.session.commit()
