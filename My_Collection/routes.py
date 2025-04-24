@@ -70,7 +70,7 @@ def init_routes(app):
         genres = Genre.query.all()
         return jsonify([genre.to_dict() for genre in genres])
 
-    @app.route('/entries/<int:entry_id>', methods=['GET'])
+    @app.route('/genres/<int:genre_id>', methods=['GET'])
     def get_genre(genre_id):
         genre = Genre.query.get_or_404(genre_id)
         return jsonify(genre.to_dict())

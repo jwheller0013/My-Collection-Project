@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Add a Piro</title>
+    <link rel="stylesheet" href="./koley.css?v=1" />
+  </head>
+  <body>
+    <h1>Add a Piro</h1>
+    <form id="addpiroform">
+      <label for="title">Title:</label>
+      <input type="text" id="title" name="title" required />
+
+      <label for="description">Description:</label>
+      <input type="text" id="description" name="description" />
+
+      <label for="s3urltovideo">S3 URL to Video:</label>
+      <input type="text" id="s3urltovideo" name="s3urltovideo" />
+
+      <input type="button" id="button1" onclick="doPostOfForm()" value="Add Piro" />
+    </form>
+    <script src="./piroadd.js"></script>
+  </body>
+</html>
+<!-- 
+
+<script>
+    // generated
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const title = document.getElementById('title').value;
+            const description = document.getElementById('description').value;
+            const s3urltovideo = document.getElementById('s3urltovideo').value;
+            const created = document.getElementById('created').value;
+            
+            const data = {
+                title: title,
+                description: description,
+                s3urltovideo: s3urltovideo,
+                created: created
+            };
+            
+            fetch('/piro/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                console.log('Data added successfully:', result);
+                // Add any additional logic or UI updates here
+            })
+            .catch(error => {
+                console.error('Error adding data:', error);
+                // Handle any error scenarios here
+            });
+        });
+    });
+</script> -->
