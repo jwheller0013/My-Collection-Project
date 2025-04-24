@@ -1,33 +1,40 @@
 #SQL Alchemy and SQL Lite
-from flask_login import UserMixin
-from werkzeug.security import generate_password_hash, check_password_hash
+# from flask_login import UserMixin
+# from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
-class User(UserMixin, db.Model):
+class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, nullable=False)
-    password_hash = db.Column(db.Text)
+    password = db.Column(db.Text)
     email = db.Column(db.String(64), unique=True, nullable=False)
     collection = db.relationship('Collection', backref='user', lazy=True)
     entries = db.relationship('Entry', backref='user', lazy=True)
 
-    def __init__(self, email, username, password):
-        self.email = email
-        self.username = username
-        self.set_password(password) #generate_password_hash(password)
+    def __repr__(self):
+        return f'<User {self.username}>'
 
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+    # def __init__(self, email, username, password):
+    #     self.email = email
+    #     self.username = username
+    #     self.set_password(password) #generate_password_hash(password)
 
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+    # def set_password(self, password):
+    #     self.password_hash = generate_password_hash(password)
+    #
+    # def check_password(self, password):
+    #     return check_password_hash(self.password_hash, password)
 
     def to_dict(self):
         return {
             'id': self.id,
             'username': self.username,
-            'email': self.email
+            'email': self.email,
+            'password': self.password,
+            'collection': self.collection,
+            'entries': self.entries
+
         }
 
 class Collection(db.Model):
@@ -36,14 +43,15 @@ class Collection(db.Model):
     collection_title = db.Column(db.String(64))
     entries = db.relationship('Entry', backref='collection', lazy=True, cascade='all, delete-orphan')
 
-    def __init__(self, title):
-        self.collection_title = title
+    def __repr__(self):
+        return f'<User {self.collection_title}>'
 
     def to_dict(self):
         return {
             'id': self.id,
             'user_id': self.user_id,
-            'collection_title': self.collection_title
+            'collection_title': self.collection_title,
+            'entries': self.entries
         }
 
 class Genre(db.Model):

@@ -5,9 +5,9 @@ app = create_app()
 
 def add_entries():
     entries_to_add = [
-        # {"id": 2, "user_id": 1, "collection_id": 1, "title": "Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb",
-        #  "tv_film": 1, "rating": 8.118, "link": "https://www.imdb.com/title/tt0057012", "poster": "https://image.tmdb.org/t/p/original/6x7MzQ6BOMlRzam1StcmPO9v61g.jpg",
-        #  "upc": "43396061873", "genres": [35, 10752]},
+        {"id": 2, "user_id": 1, "collection_id": 1, "title": "Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb",
+         "tv_film": 1, "rating": 8.118, "link": "https://www.imdb.com/title/tt0057012", "poster": "https://image.tmdb.org/t/p/original/6x7MzQ6BOMlRzam1StcmPO9v61g.jpg",
+         "upc": "43396061873", "genres": [35, 10752]},
         {"id": 3, "user_id": 1, "collection_id": 1,
          "title": "Seven Samurai",
          "tv_film": 1, "rating": 8.457, "link": "https://www.imdb.com/title/tt0047478",
