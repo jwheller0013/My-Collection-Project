@@ -73,7 +73,7 @@ class Entry(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     collection_id = db.Column(db.Integer, db.ForeignKey('collection.id'))
-    genres = db.relationship('Genre', secondary='entry_genres', lazy='dynamic')
+    genres = db.relationship('Genre', secondary='entry_genres', lazy='dynamic', overlaps="entries")
 
     def to_dict(self):
         return {
@@ -107,10 +107,10 @@ class Media(Entry):
             **base_dict,
             'title': self.title,
             'tv_film': self.tv_film,
-            'genre': self.genre,
             'rating': self.rating,
             'link': self.link,
             'upc': self.upc,
+            'poster': self.poster,
             'genres': [genre.name for genre in self.genres]
         }
 

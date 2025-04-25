@@ -22,7 +22,7 @@ function showEntryList(data) {
         title.textContent = entry.title || 'No Title';
 
         let details = document.createElement('p');
-        details.textContent = `ID: ${entry.id}, User ID: ${entry.user_id}, Collection ID: ${entry.collection_id}`;
+        details.textContent = `Rating ${entry.rating}`;
 
         let genres = document.createElement('p');
         genres.textContent = `Genres: ${entry.genres.join(', ')}`;

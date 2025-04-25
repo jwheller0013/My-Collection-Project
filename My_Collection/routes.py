@@ -55,14 +55,26 @@ def init_routes(app):
         collection = Collection.query.get_or_404(collection_id)
         return jsonify(collection.to_dict())
 
+    # @app.route('/entries', methods=['GET'])
+    # def get_entries():
+    #     entries = Entry.query.all()
+    #     return jsonify([entry.to_dict() for entry in entries])
+    #
+    # @app.route('/entries/<int:entry_id>', methods=['GET'])
+    # def get_entry(entry_id):
+    #     entry = Entry.query.get_or_404(entry_id)
+    #     return jsonify(entry.to_dict())
+
+    # Above is commented out as designed for growth to entries beyond Media but currently want to see Media
+
     @app.route('/entries', methods=['GET'])
     def get_entries():
-        entries = Entry.query.all()
+        entries = Media.query.all()
         return jsonify([entry.to_dict() for entry in entries])
 
     @app.route('/entries/<int:entry_id>', methods=['GET'])
     def get_entry(entry_id):
-        entry = Entry.query.get_or_404(entry_id)
+        entry = Media.query.get_or_404(entry_id)
         return jsonify(entry.to_dict())
 
     @app.route('/genres', methods=['GET'])
