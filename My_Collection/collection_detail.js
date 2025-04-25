@@ -65,6 +65,15 @@ function showCollectionEntries(entries) {
         viewLink.href = `/ui/entry_detail.html?entryid=${entry.id}`;
         viewLink.textContent = 'View Entry Details';
 
+        if (entry.poster) {
+            let posterImg = document.createElement('img');
+            posterImg.src = entry.poster;
+            posterImg.alt = `${entry.title || 'No Title'} Poster`;
+            posterImg.classList.add('entry-poster'); // You might want to add a CSS class for styling
+            posterImg.classList.add('entry-poster');
+            div.appendChild(posterImg);
+        }
+
         div.appendChild(title);
         div.appendChild(details);
         div.appendChild(imdbLink);

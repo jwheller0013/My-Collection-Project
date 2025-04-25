@@ -220,3 +220,11 @@
 .varwidth{
 	width: 50%;
 }
+
+
+
+.entry-poster {
+    width: 100px; /* Adjust as needed */
+    height: 150px; /* Adjust as needed */
+    object-fit: cover; /* Maintain aspect ratio and crop if necessary */
+}
