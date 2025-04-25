@@ -1,4 +1,4 @@
-from flask import request, jsonify
+from flask import request, jsonify, send_from_directory
 from models import db, User, Collection, Entry, Media, Genre
 
 def init_routes(app):
@@ -53,7 +53,8 @@ def init_routes(app):
     @app.route('/collections/<int:collection_id>', methods=['GET'])
     def get_collection(collection_id):
         collection = Collection.query.get_or_404(collection_id)
-        return jsonify(collection.to_dict())
+        entries = Entry.query.filter_by(collection_id=collection.id).all()
+        return jsonify([entry.to_dict() for entry in entries])
 
     # @app.route('/entries', methods=['GET'])
     # def get_entries():
@@ -86,3 +87,7 @@ def init_routes(app):
     def get_genre(genre_id):
         genre = Genre.query.get_or_404(genre_id)
         return jsonify(genre.to_dict())
+
+    @app.route('/collection_detail.html')
+    def serve_collection_detail_page():
+        return send_from_directory('.', 'collection_detail.html')
