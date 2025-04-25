@@ -51,8 +51,27 @@ class Collection(db.Model):
             'id': self.id,
             'user_id': self.user_id,
             'collection_title': self.collection_title,
-            'entries': self.entries
+            'entries': [self._serialize_entry(entry) for entry in self.entries]
         }
+
+    def _serialize_entry(self, entry):
+        print(f"Entry type in _serialize_entry: {type(entry)}")
+        entry_dict = {
+            'id': entry.id,
+            'user_id': entry.user_id,
+            'collection_id': entry.collection_id,
+            'genres': [genre.name for genre in entry.genres]
+            }
+        if isinstance(entry, Media):
+            entry_dict.update({
+                'title': entry.title,
+                'tv_film': entry.tv_film,
+                'rating': entry.rating,
+                'link': entry.link,
+                'upc': entry.upc,
+                'poster': entry.poster
+            })
+        return entry_dict
 
 class Genre(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -74,17 +93,27 @@ class Entry(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     collection_id = db.Column(db.Integer, db.ForeignKey('collection.id'))
     genres = db.relationship('Genre', secondary='entry_genres', lazy='dynamic', overlaps="entries")
+    type = db.Column(db.String(50))
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'entry',
+        'polymorphic_on': type
+    }
 
     def to_dict(self):
         return {
             'id': self.id,
             'user_id': self.user_id,
             'collection_id': self.collection_id,
-            'genres': [genre.name for genre in self.genres]
+            'genres': [genre.name for genre in self.genres],
+            'type': self.type
             # Add other common entry attributes if needed
         }
 
 class Media(Entry):
+    __mapper_args__ = {
+        'polymorphic_identity': 'media',
+    }
     title = db.Column(db.String(100))
     tv_film = db.Column(db.Boolean)
     rating = db.Column(db.Float)
@@ -93,7 +122,7 @@ class Media(Entry):
     upc = db.Column(db.String(20), unique=True, nullable=True)
 
     def __init__(self, title, tv_film, rating, link, poster, upc=None, user_id=None, collection_id=None):
-        super().__init__(user_id=user_id, collection_id=collection_id) # Call the __init__ of the parent class (Entry)
+        super().__init__(user_id=user_id, collection_id=collection_id, type='media') # Call the __init__ of the parent class (Entry)
         self.title = title
         self.tv_film = tv_film #can be a boolean i.e. 0=tv 1=movie
         self.rating = rating

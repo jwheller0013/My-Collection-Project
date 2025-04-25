@@ -17,9 +17,9 @@ function showCollectionList(data) {
   const list = document.createDocumentFragment();
 
   data.map(function (collection) {
-    let li = document.createElement('li');
+    let div = document.createElement('div');
     let title = document.createElement('h3');
-    title.textContent = collection.collection_title; // Use textContent for simple text
+    title.textContent = collection.collection_title || 'No Title';
 
     let viewLink = document.createElement('a');
     viewLink.href = `/ui/collection_detail.html?collectionid=${collection.id}`;

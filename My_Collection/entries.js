@@ -24,6 +24,10 @@ function showEntryList(data) {
         let details = document.createElement('p');
         details.textContent = `Rating ${entry.rating}`;
 
+        let imdbLink = document.createElement('a');
+        imdbLink.href = `${entry.link}`;
+        imdbLink.textContent = 'IMDb Link';
+
         let genres = document.createElement('p');
         genres.textContent = `Genres: ${entry.genres.join(', ')}`;
 
@@ -33,6 +37,7 @@ function showEntryList(data) {
 
         div.appendChild(title);
         div.appendChild(details);
+        div.appendChild(imdbLink);
         div.appendChild(genres);
         div.appendChild(viewLink);
 
