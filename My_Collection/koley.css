@@ -6,6 +6,13 @@ body {
   padding: 2rem;
   margin: auto;
   background: #fafafa;
+  min-height: 100vh; /* this and two below added for floating footer */
+  display: flex;
+  flex-direction: column;
+}
+
+html {
+    height: 100%; /* added for float */
 }
 
 img {
@@ -27,3 +34,35 @@ strong {
     height: auto; /* Adjust as needed */
     object-fit: cover; /* Maintain aspect ratio and crop if necessary */
 }
+
+/* added for float */
+.content {
+  flex-grow: 1; /* Allow content to take up remaining vertical space */
+}
+
+footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: #f0f0f0; /* Adjust as needed */
+    color: #333; /* Adjust as needed */
+    text-align: center;
+    padding: 10px 0; /* Adjust as needed */
+    z-index: 100; /* Ensure it stays on top of other content if needed */
+}
+
+footer p {
+    display: inline-block;
+    margin: 0 10px; /* Adjust spacing between links as needed */
+}
+
+footer hr {
+    margin-bottom: 5px; /* Adjust spacing between hr and links */
+}
+
+/* Add padding to the bottom of the body to prevent overlap */
+body {
+    padding-bottom: 60px; /* Adjust this value to be the height of your footer */
+}
+/* to here */
