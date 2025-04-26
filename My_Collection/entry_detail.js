@@ -47,12 +47,17 @@ function showEntryDetails(entry) {
         let genres = document.createElement('p');
         genres.textContent = `Genres: ${entry.genres ? entry.genres.join(', ') : 'N/A'}`;
 
+        let backLink = document.createElement('a');
+        backLink.href = `/My_Collection/collection_detail.html?collectionid=${entry.collection_id}`;
+        backLink.textContent = 'Back to Collection';
+
 
         container.appendChild(title);
         container.appendChild(posterImg);
         container.appendChild(rating);
         container.appendChild(imdbLink);
         container.appendChild(genres);
+        container.appendChild(backLink);
 
 
     } else {
