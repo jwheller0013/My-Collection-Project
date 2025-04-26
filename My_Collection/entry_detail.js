@@ -39,6 +39,9 @@ function showEntryDetails(entry) {
         let rating = document.createElement('p');
         rating.textContent = `Rating: ${entry.rating || 'N/A'}`;
 
+        let overview = document.createElement('p');
+        overview.textContent = `Overview: ${entry.overview || 'N/A'}`;
+
         let imdbLink = document.createElement('a');
         imdbLink.href = entry.link || '#';
         imdbLink.textContent = 'IMDb Link';
@@ -55,6 +58,7 @@ function showEntryDetails(entry) {
         container.appendChild(title);
         container.appendChild(posterImg);
         container.appendChild(rating);
+        container.appendChild(overview);
         container.appendChild(imdbLink);
         container.appendChild(genres);
         container.appendChild(backLink);

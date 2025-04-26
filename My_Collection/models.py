@@ -120,8 +120,9 @@ class Media(Entry):
     link = db.Column(db.String(255))
     poster = db.Column(db.String(255))
     upc = db.Column(db.String(20), unique=True, nullable=True)
+    overview = db.Column(db.String(600))
 
-    def __init__(self, title, tv_film, rating, link, poster, upc=None, user_id=None, collection_id=None):
+    def __init__(self, title, tv_film, rating, link, poster, upc=None, user_id=None, collection_id=None, overview=None):
         super().__init__(user_id=user_id, collection_id=collection_id, type='media') # Call the __init__ of the parent class (Entry)
         self.title = title
         self.tv_film = tv_film #can be a boolean i.e. 0=tv 1=movie
@@ -129,6 +130,7 @@ class Media(Entry):
         self.link = link #IMDb link
         self.upc = upc
         self.poster = poster
+        self.overview = overview
 
     def to_dict(self):
         base_dict = super().to_dict()
@@ -140,7 +142,8 @@ class Media(Entry):
             'link': self.link,
             'upc': self.upc,
             'poster': self.poster,
-            'genres': [genre.name for genre in self.genres]
+            'genres': [genre.name for genre in self.genres],
+            'overview': self.overview
         }
 
 

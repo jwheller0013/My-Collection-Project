@@ -6,7 +6,7 @@ app = create_app()
 
 def add_collections():
     collections_to_add = [
-        {"id": 1, "user_id": 1, "collection_title": "test"}
+        {"id": 1, "user_id": 1, "collection_title": "Movies"}
     ]
 
     for collection_data in collections_to_add:
