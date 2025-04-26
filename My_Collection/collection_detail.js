@@ -69,8 +69,7 @@ function showCollectionEntries(entries) {
             let posterImg = document.createElement('img');
             posterImg.src = entry.poster;
             posterImg.alt = `${entry.title || 'No Title'} Poster`;
-            posterImg.classList.add('entry-poster'); // You might want to add a CSS class for styling
-            posterImg.classList.add('entry-poster');
+            posterImg.classList.add('entry-poster'); //makes it so can adjust size in .css file
             div.appendChild(posterImg);
         }
 

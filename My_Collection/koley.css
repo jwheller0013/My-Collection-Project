@@ -21,3 +21,9 @@ h2,
 strong {
   color: #1e60ca;
 }
+
+.entry-poster {
+    max-width: 30%;
+    height: auto; /* Adjust as needed */
+    object-fit: cover; /* Maintain aspect ratio and crop if necessary */
+}

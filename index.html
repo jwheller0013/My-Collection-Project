@@ -1,15 +1,65 @@
-<html>
-  <head>
-      <meta charset="UTF-8" />
-      <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>My Collection</title>
-      <link rel="stylesheet" href="./koley.css?v=1" />
-    </head>
+<!--<html>-->
+<!--  <head>-->
+<!--      <meta charset="UTF-8" />-->
+<!--      <meta http-equiv="X-UA-Compatible" content="IE=edge" />-->
+<!--      <meta name="viewport" content="width=device-width, initial-scale=1.0" />-->
+<!--      <title>My Collection</title>-->
+<!--      <link rel="stylesheet" href="./koley.css?v=1" />-->
+<!--    </head>-->
 
-  <body>
-    <h1>My Collection</h1>
-    <p>See all your collections:</p>
-    <p><a href="/My_Collection/collections.html">List of Collections</a></p>
-  </body>
+<!--  <body>-->
+<!--    <h1>My Collection</h1>-->
+<!--    <p>See all your collections:</p>-->
+<!--    <p><a href="/My_Collection/collections.html">List of Collections</a></p>-->
+<!--  </body>-->
+<!--</html>-->
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Collection</title>
+    <link rel="stylesheet" type="text/css" href="./My_Collection/koley.css?v=1">
+</head>
+<body>
+    <div class="page">
+        <div class="content">
+            <header>
+                <h1>My Collection</h1>
+            </header>
+            <div id="homepage-content">
+                Loading...
+            </div>
+        </div>
+        <div class="footer">
+            </div>
+        <div class="errors">
+            </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('http://localhost:8080/api/home')
+                .then(response => {
+                    console.log("Raw Response:", response);
+                    return response.json();
+                })
+                .then(data => {
+                    const homepageContent = document.getElementById('homepage-content');
+                    let html = '';
+                    if (data && data.isAuthenticated) {
+                        html += '<h1><a href="/Scanner">Scan</a></h1>';
+                        html += '<h1><a href="My_Collection/collections.html">Collection</a></h1>';
+                        html += '<h1><a href="/Entry">Random</a></h1>';
+                    } else {
+                        html += '<a href="/loginform">Click here to login or register!</a>';
+                    }
+                    homepageContent.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error fetching home page data:', error);
+                    document.getElementById('homepage-content').textContent = 'Failed to load content.';
+                });
+        });
+    </script>
+</body>
 </html>

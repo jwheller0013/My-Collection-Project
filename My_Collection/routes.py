@@ -1,10 +1,23 @@
-from flask import request, jsonify, send_from_directory
+from flask import request, jsonify, send_from_directory, render_template
 from models import db, User, Collection, Entry, Media, Genre
 
 def init_routes(app):
     @app.route('/hi', methods=['GET'])
     def hi():
         return "Hello, World!"
+
+    # @app.route('/api/home')
+    # def get_home_data():
+    #     is_authenticated = False  # Replace with auth check eventually
+    #     return jsonify({'isAuthenticated': is_authenticated})
+
+
+
+    @app.route('/api/home')
+    def get_home_data():
+        is_authenticated = True  # Replace with auth check eventually
+        response_data = {'isAuthenticated': is_authenticated}
+        return jsonify(response_data)
 
     @app.route('/users', methods=['GET'])
     def get_users():
