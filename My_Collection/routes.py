@@ -104,3 +104,7 @@ def init_routes(app):
     @app.route('/collection_detail.html')
     def serve_collection_detail_page():
         return send_from_directory('.', 'collection_detail.html')
+
+    @app.route('/entry_detail.html')
+    def serve_entry_detail_page():
+        return send_from_directory('.', 'entry_detail.html')

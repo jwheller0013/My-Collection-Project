@@ -62,7 +62,7 @@ function showCollectionEntries(entries) {
         genres.textContent = `Genres: ${entry.genres ? entry.genres.join(', ') : 'N/A'}`;
 
         let viewLink = document.createElement('a');
-        viewLink.href = `/ui/entry_detail.html?entryid=${entry.id}`;
+        viewLink.href = `/My_collection/entry_detail.html?entryid=${entry.id}`;
         viewLink.textContent = 'View Entry Details';
 
         if (entry.poster) {
@@ -74,10 +74,11 @@ function showCollectionEntries(entries) {
         }
 
         div.appendChild(title);
+        div.appendChild(viewLink);
         div.appendChild(details);
         div.appendChild(imdbLink);
         div.appendChild(genres);
-        div.appendChild(viewLink);
+
 
         list.appendChild(div);
     });
