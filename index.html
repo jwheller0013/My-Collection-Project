@@ -38,22 +38,52 @@
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            fetch('http://localhost:8080/api/home')
+            const API_URL = `http://localhost:8080`;
+            const homepageContent = document.getElementById('homepage-content');
+
+            fetch(`${API_URL}/api/home`)
                 .then(response => {
                     console.log("Raw Response:", response);
                     return response.json();
                 })
                 .then(data => {
-                    const homepageContent = document.getElementById('homepage-content');
                     let html = '';
                     if (data && data.isAuthenticated) {
                         html += '<h1><a href="/Scanner">Scan</a></h1>';
                         html += '<h1><a href="My_Collection/collections.html">Collection</a></h1>';
-                        html += '<h1><a href="/Entry">Random</a></h1>';
+                        html += '<h1><a id="random-entry-link-home" href="#">Random</a></h1>';
                     } else {
                         html += '<a href="/loginform">Click here to log in or register!</a>';
                     }
                     homepageContent.innerHTML = html;
+
+                    // Attach the event listener AFTER the element is added to the DOM
+                    const randomEntryLinkHome = document.getElementById('random-entry-link-home');
+                    if (randomEntryLinkHome) {
+                        randomEntryLinkHome.addEventListener('click', function(event) {
+                            event.preventDefault();
+                            fetch(`${API_URL}/api/random_entry`)
+                                .then(response => {
+                                    if (!response.ok) {
+                                        return response.json().then(err => {
+                                            throw new Error(err.error || 'Failed to get random entry ID');
+                                        });
+                                    }
+                                    return response.json();
+                                })
+                                .then(data => {
+                                    if (data && data.entry_id) {
+                                        window.location.href = `/My_Collection/entry_detail.html?entryid=${data.entry_id}`;
+                                    } else {
+                                        alert('Could not retrieve a random entry ID.');
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error fetching random entry:', error);
+                                    alert(error.message);
+                                });
+                        });
+                    }
                 })
                 .catch(error => {
                     console.error('Error fetching home page data:', error);
@@ -61,5 +91,5 @@
                 });
         });
     </script>
-</body>
+    </body>
 </html>

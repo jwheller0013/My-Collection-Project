@@ -1,3 +1,4 @@
+import random
 from flask import request, jsonify, send_from_directory, render_template
 from models import db, User, Collection, Entry, Media, Genre
 
@@ -108,3 +109,13 @@ def init_routes(app):
     @app.route('/entry_detail.html')
     def serve_entry_detail_page():
         return send_from_directory('.', 'entry_detail.html')
+
+    @app.route('/api/random_entry')
+    def get_random_entry():
+        user_id = 1 #placeholder will need to add a means to check userid
+        user_entries = Media.query.filter_by(user_id=user_id).all()
+        if user_entries:
+            random_entry = random.choice(user_entries)
+            return jsonify({'entry_id': random_entry.id})
+        else:
+            return jsonify({'error': 'No entries found for this user'}), 404
