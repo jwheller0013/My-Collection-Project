@@ -119,3 +119,11 @@ def init_routes(app):
             return jsonify({'entry_id': random_entry.id})
         else:
             return jsonify({'error': 'No entries found for this user'}), 404
+
+    @app.route('/scanner.html')
+    def scanner_page():
+        return send_from_directory('.', 'scanner.html')
+
+    @app.route('/scanner_results.html')
+    def scanner_results_page():
+        return send_from_directory('.', 'scanner_results.html')

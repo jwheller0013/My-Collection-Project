@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scanner Results</title>
+    <link rel="stylesheet" href="./koley.css?v=1" />
+</head>
+
+<body>
+  <h1>Scan Results</h1>
+  <h1>Results</h1>
+  <h1>Add to Collection Button</h1>
+    <div>
+      <label for="collection_id">Add to Collection:</label>
+      <select id="collection_id" name="collection_id" required>
+        <option value="">-- Select a Collection --</option>
+        {% for collection in collections %}
+          <option value="{{ collection.id }}">{{ collection.collection_title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <button type="submit">Add to Collection</button>
+    <h1><a href="/My_collection/scanner.html">Scan More Button</a></h1>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scanner</title>
+    <link rel="stylesheet" href="./koley.css?v=1" />
+</head>
+
+<body>
+  <h1> Please Scan or Enter UPC</h1>
+  <h2>Camera Screen</h2>
+  <h3><a href="/My_collection/scanner_results.html">Camera Button</a></h3>
+  <h2>Enter UPC Manually</h2>
+    <form method="POST" action="/add_media_by_upc">
+      <label for="upc">UPC:</label>
+      <input type="text" id="upc" name="upc" required>
+      <input type="hidden" name="user_id" value="{{ current_user.id }}">
+      <button type="submit">Add by UPC</button>
+    </form>
+</body>
+</html>
