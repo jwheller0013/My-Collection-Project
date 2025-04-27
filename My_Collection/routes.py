@@ -127,3 +127,7 @@ def init_routes(app):
     @app.route('/scanner_results.html')
     def scanner_results_page():
         return send_from_directory('.', 'scanner_results.html')
+
+    @app.route('/sort.html')
+    def sort_page():
+        return send_from_directory('.', 'sort.html')
