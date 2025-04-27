@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Collection</title>
+    <link rel="stylesheet" href="./koley.css?v=1" />
+</head>
+
+<body>
+  <header>
+    <h1>Create New Collection</h1>
+  </header>
+
+  <main>
+    <form id="create-collection-form">
+      <div>
+        <label for="collection_title">Collection Title:</label>
+        <input type="text" id="collection_title" name="collection_title" required>
+      </div>
+      <div>
+        <label for="collection_type">Collection Type:</label>
+        <select id="collection_type" name="collection_type">
+          <option value="general">General</option>
+          <option value="media">Media</option>
+          <option value="books">Books</option>
+          <option value="videogames">Videogames</option>
+        </select>
+      </div>
+      <button type="submit">Create Collection</button>
+    </form>
+    <div id="form-submission-message"></div>
+    </main>
+
+
+    <footer>
+        <hr>
+        <p><a href="/My_collection/collections.html">Collections</a></p>
+        <p><a href="/">Homepage</a></p>
+        <p><a href="/My_collection/scanner.html">Scan</a></p>
+        <p><a id="random-entry-link-collection" href="#">Random</a></p>
+        </footer>
+    <script src="./random_entry.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const createCollectionForm = document.getElementById('create-collection-form');
+            const submissionMessage = document.getElementById('form-submission-message');
+            const API_URL = 'http://localhost:8080';
+
+            createCollectionForm.addEventListener('submit', function(event) {
+                event.preventDefault(); // Prevent the default form submission
+
+                const title = document.getElementById('collection_title').value;
+                const type = document.getElementById('collection_type').value;
+
+                fetch(`${API_URL}/api/collections`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ collection_title: title, collection_type: type })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => {
+                            throw new Error(err.msg || 'Failed to create collection');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    submissionMessage.textContent = data.msg || 'Collection created successfully!';
+                    createCollectionForm.reset();
+                })
+                .catch(error => {
+                    console.error('Error creating collection:', error);
+                    submissionMessage.textContent = error.message;
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>

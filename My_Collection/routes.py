@@ -131,3 +131,32 @@ def init_routes(app):
     @app.route('/sort.html')
     def sort_page():
         return send_from_directory('.', 'sort.html')
+
+    @app.route('/create_collection.html')
+    def create_collection_page():
+        return send_from_directory('.', 'create_collection.html')
+
+    @app.route('/api/collections', methods=['POST'])
+    def create_collection():
+        # user_id = get_current_user_id() # Get the ID user currently lacking a get current user set up
+        user_id = 1
+        if not user_id:
+            return jsonify({"msg": "User not authenticated"}), 401
+
+        data = request.get_json()
+        title = data.get('collection_title')
+        collection_type = data.get('collection_type', 'general') # Get type, default to 'general' if not provided
+
+        if not title:
+            return jsonify({"msg": "Collection title is required"}), 400
+
+        new_collection = Collection(
+            collection_title=title,
+            collection_type=collection_type,
+            user_id=user_id
+        )
+
+        db.session.add(new_collection)
+        db.session.commit()
+
+        return jsonify({"msg": "Collection created successfully", "collection_id": new_collection.id}), 201
