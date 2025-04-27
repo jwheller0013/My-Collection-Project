@@ -41,6 +41,7 @@ class Collection(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     collection_title = db.Column(db.String(64))
+    collection_type = db.Column(db.String(50), default='general')
     entries = db.relationship('Entry', backref='collection', lazy=True, cascade='all, delete-orphan')
 
     def __repr__(self):
@@ -51,6 +52,7 @@ class Collection(db.Model):
             'id': self.id,
             'user_id': self.user_id,
             'collection_title': self.collection_title,
+            'collection_type': self.collection_type,
             'entries': [self._serialize_entry(entry) for entry in self.entries]
         }
 
@@ -60,6 +62,7 @@ class Collection(db.Model):
             'id': entry.id,
             'user_id': entry.user_id,
             'collection_id': entry.collection_id,
+            'type': entry.type,
             'genres': [genre.name for genre in entry.genres]
             }
         if isinstance(entry, Media):
