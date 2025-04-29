@@ -11,19 +11,51 @@
 <body>
   <h1>Scan Results</h1>
   <h1>Results</h1>
-  <h1>Add to Collection Button</h1>
+  <form id="add-to-collection-form">
     <div>
       <label for="collection_id">Add to Collection:</label>
       <select id="collection_id" name="collection_id" required>
         <option value="">-- Select a Collection --</option>
-        {% for collection in collections %}
-          <option value="{{ collection.id }}">{{ collection.collection_title }}</option>
-        {% endfor %}
       </select>
     </div>
 
+    <div id="media-fields">
+      <h2>Add Media Entry</h2>
+      <div>
+        <label for="title">Title:</label>
+        <input type="text" id="title" name="title">
+      </div>
+      <div>
+        <label for="tv_film">TV/Film (1 for Film, 0 for TV):</label>
+        <input type="number" id="tv_film" name="tv_film" min="0" max="1">
+      </div>
+      <div>
+        <label for="rating">Rating:</label>
+        <input type="number" id="rating" name="rating" step="0.1" min="0" max="10">
+      </div>
+      <div>
+        <label for="link">IMDb Link:</label>
+        <input type="url" id="link" name="link">
+      </div>
+      <div>
+        <label for="poster">Poster URL:</label>
+        <input type="url" id="poster" name="poster">
+      </div>
+      <div>
+        <label for="upc">UPC:</label>
+        <input type="text" id="upc" name="upc">
+      </div>
+      <div>
+        <label for="overview">Overview:</label>
+        <textarea id="overview" name="overview"></textarea>
+      </div>
+    </div>
+
     <button type="submit">Add to Collection</button>
-    <h1><a href="/My_collection/scanner.html">Scan More Button</a></h1>
+    <div id="form-submission-message"></div>
+  </form>
+
+  <h1><a href="/My_collection/scanner.html">Scan More Button</a></h1>
 
     <footer>
         <hr>
@@ -33,5 +65,100 @@
         <p><a id="random-entry-link-collection" href="#">Random</a></p>
         </footer>
     <script src="./random_entry.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const collectionDropdown = document.getElementById('collection_id');
+            const addToCollectionForm = document.getElementById('add-to-collection-form');
+            const formSubmissionMessage = document.getElementById('form-submission-message');
+            const mediaFields = document.getElementById('media-fields'); // Assuming these fields are always present but might be empty
+            const API_URL = 'http://localhost:8080';
+
+            // Function to fetch and populate collections with their types
+            function fetchCollections() {
+                fetch(`${API_URL}/collections`) // Assuming this route returns all collection details
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(collections => {
+                        collections.forEach(collection => {
+                            const option = document.createElement('option');
+                            option.value = collection.id;
+                            option.textContent = collection.collection_title;
+                            option.dataset.collectionType = collection.collection_type; // Store collection type as data attribute
+                            collectionDropdown.appendChild(option);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching collections:', error);
+                        formSubmissionMessage.textContent = 'Failed to load collections.';
+                    });
+            }
+
+            // Call fetchCollections when the page loads
+            fetchCollections();
+
+            addToCollectionForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                const selectedCollectionId = collectionDropdown.value;
+                const selectedCollectionType = collectionDropdown.options[collectionDropdown.selectedIndex].dataset.collectionType;
+
+                if (!selectedCollectionId) {
+                    formSubmissionMessage.textContent = 'Please select a collection.';
+                    return;
+                }
+
+                let formData = {
+                    collection_id: selectedCollectionId,
+                    type: selectedCollectionType // Use the collection type
+                };
+
+                if (selectedCollectionType === 'media') {
+                    formData = {
+                        ...formData,
+                        title: document.getElementById('title').value,
+                        tv_film: parseInt(document.getElementById('tv_film').value),
+                        rating: parseFloat(document.getElementById('rating').value),
+                        link: document.getElementById('link').value,
+                        poster: document.getElementById('poster').value,
+                        upc: document.getElementById('upc').value,
+                        overview: document.getElementById('overview').value
+                    };
+                } else if (selectedCollectionType === 'general') {
+                    // You might want to add a generic input field for 'general' entries in the HTML
+                    // formData.details = document.getElementById('general-details').value;
+                }
+                // Add logic for other collection types if needed
+
+                fetch(`${API_URL}/entries`, { // Assuming this route handles creation of new entries
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => {
+                            throw new Error(err.msg || 'Failed to add entry');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    formSubmissionMessage.textContent = 'Entry added successfully!';
+                    addToCollectionForm.reset();
+                })
+                .catch(error => {
+                    console.error('Error adding entry:', error);
+                    formSubmissionMessage.textContent = error.message;
+                });
+            });
+        });
+    </script>
+
 </body>
 </html>

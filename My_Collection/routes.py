@@ -160,3 +160,54 @@ def init_routes(app):
         db.session.commit()
 
         return jsonify({"msg": "Collection created successfully", "collection_id": new_collection.id}), 201
+
+    @app.route('/entries', methods=['POST'])
+    def create_entry():
+        data = request.get_json()
+        collection_id = data.get('collection_id')
+        user_id = 1  # Placeholder for current user
+
+        if not collection_id:
+            return jsonify({"msg": "Collection ID is required"}), 400
+
+        collection = Collection.query.get_or_404(collection_id)
+        entry_type = collection.collection_type
+
+        if entry_type == 'media':
+            title = data.get('title')
+            tv_film = data.get('tv_film')
+            rating = data.get('rating')
+            link = data.get('link')
+            poster = data.get('poster')
+            upc = data.get('upc')
+            overview = data.get('overview')
+
+            if not title:
+                return jsonify({"msg": "Title is required for media entries"}), 400
+
+            # Convert empty string UPC to None
+            if upc == "":
+                upc = None
+
+            new_entry = Media(
+                title=title,
+                tv_film=tv_film,
+                rating=rating,
+                link=link,
+                poster=poster,
+                upc=upc,
+                overview=overview,
+                user_id=user_id,
+                collection_id=collection_id,
+            )
+        elif entry_type == 'general':
+            new_entry = Entry(
+                user_id=user_id,
+                collection_id=collection_id,
+            )
+        else:
+            return jsonify({"msg": f"Invalid entry type: {entry_type}"}), 400
+
+        db.session.add(new_entry)
+        db.session.commit()
+        return jsonify({"msg": "Entry created successfully", "entry_id": new_entry.id}), 201
