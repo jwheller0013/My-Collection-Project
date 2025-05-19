@@ -1,7 +1,9 @@
 import random
+
+import requests
 from flask import request, jsonify, send_from_directory, render_template
 from models import db, User, Collection, Entry, Media, Genre
-from tmdb_api import search_movie, get_movie_details
+from tmdb_api import search_movie, get_movie_details, get_imdb_link_from_movie_id
 
 def init_routes(app):
     @app.route('/hi', methods=['GET'])
@@ -289,19 +291,73 @@ def init_routes(app):
     def lookup_upc():
         data = request.get_json()
         upc = data.get('upc')
+        print(f"Received UPC: {upc}")
 
         if not upc:
             return jsonify({"msg": "UPC is required"}), 400
 
-        # UPCitemdb or similar service
-        api_key = "your_upc_api_key"
-        response = requests.get(f"https://api.upcitemdb.com/prod/trial/lookup?upc={upc}")
-        if response.status_code != 200:
-            return jsonify({"msg": "UPC lookup failed"}), 500
+        try:
+            response = requests.get(
+                f"https://api.upcitemdb.com/prod/trial/lookup?upc={upc}",
+                headers={"Accept-Encoding": "gzip"}
+            )
+            response.raise_for_status()
+        except requests.RequestException as e:
+            print(f"UPC API request failed: {e}")
+            return jsonify({"msg": "UPC lookup failed", "error": str(e)}), 500
 
         items = response.json().get('items', [])
+        print(f"UPC items: {items}")
         if not items:
             return jsonify({"msg": "No item found for this UPC"}), 404
 
         title = items[0].get('title')
-        return jsonify({"title": title}), 200
+        print(f"Title from UPC: {title}")
+        if not title:
+            return jsonify({"msg": "No title found from UPC lookup"}), 404
+
+        try:
+            movie = search_movie(title)
+            print(f"TMDB result: {movie}")
+        except requests.RequestException as e:
+            return jsonify({"msg": "TMDB lookup failed", "error": str(e)}), 500
+
+        if not movie:
+            return jsonify({
+                "msg": "No matching movie found on TMDB",
+                "title": title
+            }), 200
+
+        try:
+            details = get_movie_details(movie['id'])
+        except requests.RequestException as e:
+            return jsonify({"msg": "Failed to fetch movie details", "error": str(e)}), 500
+
+        return jsonify({
+            "title": movie.get("title"),
+            "overview": movie.get("overview"),
+            "rating": movie.get("vote_average"),
+            "poster": f"https://image.tmdb.org/t/p/w500{movie.get('poster_path')}" if movie.get(
+                'poster_path') else None,
+            "link": f"https://www.imdb.com/title/{details.get('imdb_id')}" if details.get('imdb_id') else "",
+            "tv_film": 1,
+            "upc": upc
+        }), 200
+
+    @app.route('/api/get_movie_imdb_link', methods=['GET'])
+    def get_imdb_link():
+        title = request.args.get('title')
+        if not title:
+            return jsonify({"error": "Title is required"}), 400
+
+        # First, search for the movie by title
+        movie = search_movie(title)
+        if not movie:
+            return jsonify({"error": "Movie not found"}), 404
+
+        # Get the IMDb link from the movie ID
+        imdb_link = get_imdb_link_from_movie_id(movie['id'])
+        if imdb_link:
+            return jsonify({"imdb_link": imdb_link})
+
+        return jsonify({"error": "IMDb link not found"}), 404

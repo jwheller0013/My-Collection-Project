@@ -2,6 +2,7 @@
 # from flask_login import UserMixin
 # from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import Numeric
 db = SQLAlchemy()
 
 class User(db.Model):
@@ -119,7 +120,7 @@ class Media(Entry):
     }
     title = db.Column(db.String(100))
     tv_film = db.Column(db.Boolean)
-    rating = db.Column(db.Float)
+    rating = db.Column(Numeric(3, 1))
     link = db.Column(db.String(255))
     poster = db.Column(db.String(255))
     upc = db.Column(db.String(20), unique=True, nullable=True)
