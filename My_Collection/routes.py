@@ -1,6 +1,7 @@
 import random
 from flask import request, jsonify, send_from_directory, render_template
 from models import db, User, Collection, Entry, Media, Genre
+from tmdb_api import search_movie, get_movie_details
 
 def init_routes(app):
     @app.route('/hi', methods=['GET'])
@@ -211,3 +212,96 @@ def init_routes(app):
         db.session.add(new_entry)
         db.session.commit()
         return jsonify({"msg": "Entry created successfully", "entry_id": new_entry.id}), 201
+
+    # API TMDB
+    @app.route('/api/tmdb_import', methods=['POST'])
+    def import_movie_from_tmdb():
+        data = request.get_json()
+        title = data.get('title')
+        collection_id = data.get('collection_id')
+        user_id = 1  # Update later when having more users
+
+        if not title or not collection_id:
+            return jsonify({"msg": "Title and collection ID are required"}), 400
+
+        tmdb_result = search_movie(title)
+        if not tmdb_result:
+            return jsonify({"msg": f"No movie found with title '{title}'"}), 404
+
+        movie_id = tmdb_result['id']
+        details = get_movie_details(movie_id)
+
+        # Get or create genre entries
+        genre_objs = []
+        for genre in details.get('genres', []):
+            genre_obj = Genre.query.filter_by(name=genre['name']).first()
+            if not genre_obj:
+                genre_obj = Genre(name=genre['name'])
+                db.session.add(genre_obj)
+            genre_objs.append(genre_obj)
+
+        new_media = Media(
+            title=details.get('title'),
+            tv_film=True,  # it's a movie
+            rating=details.get('vote_average'),
+            link=f"https://www.imdb.com/title/{details.get('imdb_id')}" if details.get('imdb_id') else "",
+            poster=f"https://image.tmdb.org/t/p/w500{details.get('poster_path')}" if details.get('poster_path') else "",
+            upc=None,
+            overview=details.get('overview'),
+            user_id=user_id,
+            collection_id=collection_id
+        )
+
+        for genre in genre_objs:
+            new_media.genres.append(genre)
+
+        db.session.add(new_media)
+        db.session.commit()
+
+        return jsonify({"msg": "Movie imported successfully", "entry_id": new_media.id}), 201
+
+    @app.route('/api/tmdb_import_preview', methods=['POST'])
+    def preview_tmdb_movie():
+        data = request.get_json()
+        title = data.get('title')
+
+        if not title:
+            return jsonify({"msg": "Title is required"}), 400
+
+        tmdb_result = search_movie(title)
+        if not tmdb_result:
+            return jsonify({"msg": f"No movie found with title '{title}'"}), 404
+
+        movie_id = tmdb_result['id']
+        details = get_movie_details(movie_id)
+
+        return jsonify({
+            'title': details.get('title'),
+            'rating': details.get('vote_average'),
+            'link': f"https://www.imdb.com/title/{details.get('imdb_id')}" if details.get('imdb_id') else "",
+            'poster': f"https://image.tmdb.org/t/p/w500{details.get('poster_path')}" if details.get(
+                'poster_path') else "",
+            'overview': details.get('overview')
+        }), 200
+
+    # API UPC
+    @app.route('/api/upc_lookup', methods=['POST'])
+    def lookup_upc():
+        data = request.get_json()
+        upc = data.get('upc')
+
+        if not upc:
+            return jsonify({"msg": "UPC is required"}), 400
+
+        # UPCitemdb or similar service
+        api_key = "your_upc_api_key"
+        response = requests.get(f"https://api.upcitemdb.com/prod/trial/lookup?upc={upc}")
+        if response.status_code != 200:
+            return jsonify({"msg": "UPC lookup failed"}), 500
+
+        items = response.json().get('items', [])
+        if not items:
+            return jsonify({"msg": "No item found for this UPC"}), 404
+
+        title = items[0].get('title')
+        return jsonify({"title": title}), 200

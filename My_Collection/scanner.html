@@ -9,23 +9,48 @@
 </head>
 
 <body>
-  <h1> Please Scan or Enter UPC</h1>
-  <h2>Camera Screen</h2>
-  <h3><a href="/My_collection/scanner_results.html">Camera Button</a></h3>
-  <h2>Enter UPC Manually</h2>
-    <form method="POST" action="/add_media_by_upc">
-      <label for="upc">UPC:</label>
-      <input type="text" id="upc" name="upc" required>
-      <input type="hidden" name="user_id" value="{{ current_user.id }}">
-      <button type="submit">Add by UPC</button>
+    <h1>Please Scan or Enter UPC</h1>
+    <h2>Camera Screen</h2>
+    <h3><a href="/My_collection/scanner_results.html">Camera Button</a></h3>
+
+    <h2>Enter UPC Manually</h2>
+    <form id="upc-form">
+        <label for="upc">UPC:</label>
+        <input type="text" id="upc" name="upc" required>
+        <button type="submit">Add by UPC</button>
     </form>
+
     <footer>
         <hr>
         <p><a href="/My_collection/collections.html">Collections</a></p>
         <p><a href="/">Homepage</a></p>
         <p><a href="/My_collection/scanner.html">Scan</a></p>
         <p><a id="random-entry-link-collection" href="#">Random</a></p>
-        </footer>
+    </footer>
+
     <script src="./random_entry.js"></script>
+    <script>
+        document.getElementById('upc-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const upc = document.getElementById('upc').value;
+            fetch('http://localhost:8080/api/upc_lookup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ upc })
+            })
+            .then(res => res.json())
+            .then(data => {
+                let redirectUrl = `/My_collection/scanner_results.html?upc=${encodeURIComponent(upc)}`;
+                if (data.title) {
+                    redirectUrl += `&title=${encodeURIComponent(data.title)}`;
+                }
+                window.location.href = redirectUrl;
+            })
+            .catch(err => {
+                console.error('Error during UPC lookup:', err);
+                window.location.href = `/My_collection/scanner_results.html?upc=${encodeURIComponent(upc)}`;
+            });
+        });
+    </script>
 </body>
 </html>
