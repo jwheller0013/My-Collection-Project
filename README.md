@@ -1,5 +1,8 @@
 # My-Collection-Project
 
+Conect with me:
+James Heller: https://www.linkedin.com/in/james-heller-xiii/
+
 One Pager:
 https://docs.google.com/document/d/14__qgkAhTvgre9afAtztiYwHHG60zgPDg6Nhidu0-34/edit?usp=sharing
 
