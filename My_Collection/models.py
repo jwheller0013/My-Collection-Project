@@ -75,6 +75,13 @@ class Collection(db.Model):
                 'upc': entry.upc,
                 'poster': entry.poster
             })
+        # elif isinstance(entry, Videogame):
+        #     entry_dict.update({
+        #         'title': entry.title,
+        #         'overview': entry.overview,
+        #         'poster': entry.poster,
+        #         'upc': entry.upc
+        #     })
         return entry_dict
 
 class Genre(db.Model):
@@ -150,4 +157,31 @@ class Media(Entry):
             'overview': self.overview
         }
 
+# class Videogame(Entry):
+#     __mapper_args__ = {
+#         'polymorphic_identity': 'videogame',
+#     }
+#
+#     title = db.Column(db.String(100))
+#     overview = db.Column(db.String(600))
+#     upc = db.Column(db.String(20), unique=True, nullable=True)
+#     poster = db.Column(db.String(255))
+#
+#     def __init__(self, title, overview=None, upc=None, poster=None, user_id=None, collection_id=None):
+#         super().__init__(user_id=user_id, collection_id=collection_id, type='videogame')
+#         self.title = title
+#         self.overview = overview
+#         self.upc = upc
+#         self.poster = poster
+#
+#     def to_dict(self):
+#         base_dict = super().to_dict()
+#         return {
+#             **base_dict,
+#             'title': self.title,
+#             'overview': self.overview,
+#             'upc': self.upc,
+#             'poster': self.poster,
+#             'genres': [genre.name for genre in self.genres]
+#         }
 

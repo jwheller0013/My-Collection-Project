@@ -311,36 +311,51 @@ def init_routes(app):
         if not items:
             return jsonify({"msg": "No item found for this UPC"}), 404
 
-        title = items[0].get('title')
-        print(f"Title from UPC: {title}")
-        if not title:
-            return jsonify({"msg": "No title found from UPC lookup"}), 404
+        item = items[0]
+        title = item.get('title')
+        description = item.get('description')
+        images = item.get('images', [])
+        category = item.get('category', '').lower()
 
-        try:
-            movie = search_movie(title)
-            print(f"TMDB result: {movie}")
-        except requests.RequestException as e:
-            return jsonify({"msg": "TMDB lookup failed", "error": str(e)}), 500
+        print(f"Category: {category}")
 
-        if not movie:
+        # Determine if the item is a movie or TV show
+        is_film = any(keyword in category for keyword in ['dvd', 'blu-ray', 'movie', 'television', 'tv'])
+
+        if is_film:
+            try:
+                movie = search_movie(title)
+                print(f"TMDB result: {movie}")
+            except requests.RequestException as e:
+                return jsonify({"msg": "TMDB lookup failed", "error": str(e)}), 500
+
+            if not movie:
+                return jsonify({
+                    "msg": "No matching movie found on TMDB",
+                    "title": title
+                }), 200
+
+            try:
+                details = get_movie_details(movie['id'])
+            except requests.RequestException as e:
+                return jsonify({"msg": "Failed to fetch movie details", "error": str(e)}), 500
+
             return jsonify({
-                "msg": "No matching movie found on TMDB",
-                "title": title
+                "title": movie.get("title"),
+                "overview": movie.get("overview"),
+                "rating": movie.get("vote_average"),
+                "poster": f"https://image.tmdb.org/t/p/w500{movie.get('poster_path')}" if movie.get(
+                    'poster_path') else None,
+                "link": f"https://www.imdb.com/title/{details.get('imdb_id')}" if details.get('imdb_id') else "",
+                "tv_film": 1,
+                "upc": upc
             }), 200
 
-        try:
-            details = get_movie_details(movie['id'])
-        except requests.RequestException as e:
-            return jsonify({"msg": "Failed to fetch movie details", "error": str(e)}), 500
-
+        # Non-movie fallback
         return jsonify({
-            "title": movie.get("title"),
-            "overview": movie.get("overview"),
-            "rating": movie.get("vote_average"),
-            "poster": f"https://image.tmdb.org/t/p/w500{movie.get('poster_path')}" if movie.get(
-                'poster_path') else None,
-            "link": f"https://www.imdb.com/title/{details.get('imdb_id')}" if details.get('imdb_id') else "",
-            "tv_film": 1,
+            "title": title,
+            "overview": description,
+            "poster": images[0] if images else None,
             "upc": upc
         }), 200
 
