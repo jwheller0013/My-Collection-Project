@@ -2,7 +2,7 @@ import random
 
 import requests
 from flask import request, jsonify, send_from_directory, render_template
-from models import db, User, Collection, Entry, Media, Genre
+from models import db, User, Collection, Entry, Media, Genre, Videogame
 from tmdb_api import search_movie, get_movie_details, get_imdb_link_from_movie_id
 
 def init_routes(app):
@@ -73,27 +73,47 @@ def init_routes(app):
         entries = Entry.query.filter_by(collection_id=collection.id).all()
         return jsonify([entry.to_dict() for entry in entries])
 
+    @app.route('/entries', methods=['GET'])
+    def get_entries():
+        # Query all types of entries
+        media_entries = Media.query.all()
+        videogame_entries = Videogame.query.all()
+        general_entries = Entry.query.all()
+
+        # Combine all entries into one list
+        all_entries = media_entries + videogame_entries + general_entries
+
+        # Return them as JSON
+        return jsonify([entry.to_dict() for entry in all_entries])
+
+    @app.route('/entries/<int:entry_id>', methods=['GET'])
+    def get_entry(entry_id):
+        # Try Media first
+        entry = Media.query.get(entry_id)
+        if entry:
+            return jsonify(entry.to_dict())
+
+        # Then try Videogame
+        entry = Videogame.query.get(entry_id)
+        if entry:
+            return jsonify(entry.to_dict())
+
+        # Then try generic Entry
+        entry = Entry.query.get(entry_id)
+        if entry:
+            return jsonify(entry.to_dict())
+
+        return jsonify({"msg": "Entry not found"}), 404
+
     # @app.route('/entries', methods=['GET'])
     # def get_entries():
-    #     entries = Entry.query.all()
+    #     entries = Media.query.all()
     #     return jsonify([entry.to_dict() for entry in entries])
     #
     # @app.route('/entries/<int:entry_id>', methods=['GET'])
     # def get_entry(entry_id):
-    #     entry = Entry.query.get_or_404(entry_id)
+    #     entry = Media.query.get_or_404(entry_id)
     #     return jsonify(entry.to_dict())
-
-    # Above is commented out as designed for growth to entries beyond Media but currently want to see Media
-
-    @app.route('/entries', methods=['GET'])
-    def get_entries():
-        entries = Media.query.all()
-        return jsonify([entry.to_dict() for entry in entries])
-
-    @app.route('/entries/<int:entry_id>', methods=['GET'])
-    def get_entry(entry_id):
-        entry = Media.query.get_or_404(entry_id)
-        return jsonify(entry.to_dict())
 
     @app.route('/genres', methods=['GET'])
     def get_genres():
@@ -203,6 +223,28 @@ def init_routes(app):
                 user_id=user_id,
                 collection_id=collection_id,
             )
+
+        elif entry_type == 'videogames':
+            title = data.get('title')
+            poster = data.get('poster')
+            upc = data.get('upc')
+            overview = data.get('overview')
+
+            if not title:
+                return jsonify({"msg": "Title is required for videogame entries"}), 400
+
+            if upc == "":
+                upc = None
+
+            new_entry = Videogame(
+                title=title,
+                poster=poster,
+                upc=upc,
+                overview=overview,
+                user_id=user_id,
+                collection_id=collection_id,
+            )
+
         elif entry_type == 'general':
             new_entry = Entry(
                 user_id=user_id,

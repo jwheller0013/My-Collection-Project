@@ -3,7 +3,7 @@ const ENTRY_DETAIL_CONTAINER_ID = 'entry-detail-container';
 
 function getEntryIdFromUrl() {
     const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('entryid');
+    return urlParams.get('entry_id');
 }
 
 function fetchEntryDetails(entryId) {

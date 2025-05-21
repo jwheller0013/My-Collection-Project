@@ -75,13 +75,13 @@ class Collection(db.Model):
                 'upc': entry.upc,
                 'poster': entry.poster
             })
-        # elif isinstance(entry, Videogame):
-        #     entry_dict.update({
-        #         'title': entry.title,
-        #         'overview': entry.overview,
-        #         'poster': entry.poster,
-        #         'upc': entry.upc
-        #     })
+        elif isinstance(entry, Videogame):
+            entry_dict.update({
+                'title': entry.title,
+                'overview': entry.overview,
+                'poster': entry.poster,
+                'upc': entry.upc
+            })
         return entry_dict
 
 class Genre(db.Model):
@@ -103,8 +103,12 @@ class Entry(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     collection_id = db.Column(db.Integer, db.ForeignKey('collection.id'))
-    genres = db.relationship('Genre', secondary='entry_genres', lazy='dynamic', overlaps="entries")
     type = db.Column(db.String(50))
+    title = db.Column(db.String(100), nullable=False)
+    overview = db.Column(db.String(600))
+    upc = db.Column(db.String(20), unique=True, nullable=True)
+    poster = db.Column(db.String(255))
+    genres = db.relationship('Genre', secondary='entry_genres', lazy='dynamic', overlaps="entries")
 
     __mapper_args__ = {
         'polymorphic_identity': 'entry',
@@ -116,72 +120,68 @@ class Entry(db.Model):
             'id': self.id,
             'user_id': self.user_id,
             'collection_id': self.collection_id,
-            'genres': [genre.name for genre in self.genres],
-            'type': self.type
-            # Add other common entry attributes if needed
+            'type': self.type,
+            'title': self.title,
+            'overview': self.overview,
+            'upc': self.upc,
+            'poster': self.poster,
+            'genres': [genre.name for genre in self.genres]
         }
+
+
 
 class Media(Entry):
     __mapper_args__ = {
         'polymorphic_identity': 'media',
     }
-    title = db.Column(db.String(100))
+
     tv_film = db.Column(db.Boolean)
     rating = db.Column(Numeric(3, 1))
     link = db.Column(db.String(255))
-    poster = db.Column(db.String(255))
-    upc = db.Column(db.String(20), unique=True, nullable=True)
-    overview = db.Column(db.String(600))
 
-    def __init__(self, title, tv_film, rating, link, poster, upc=None, user_id=None, collection_id=None, overview=None):
-        super().__init__(user_id=user_id, collection_id=collection_id, type='media') # Call the __init__ of the parent class (Entry)
-        self.title = title
-        self.tv_film = tv_film #can be a boolean i.e. 0=tv 1=movie
+    def __init__(self, title, tv_film, rating, link, poster=None, upc=None, overview=None, user_id=None, collection_id=None):
+        super().__init__(
+            title=title,
+            overview=overview,
+            upc=upc,
+            poster=poster,
+            user_id=user_id,
+            collection_id=collection_id,
+            type='media'
+        )
+        self.tv_film = tv_film
         self.rating = rating
-        self.link = link #IMDb link
-        self.upc = upc
-        self.poster = poster
-        self.overview = overview
+        self.link = link
 
     def to_dict(self):
         base_dict = super().to_dict()
         return {
             **base_dict,
-            'title': self.title,
             'tv_film': self.tv_film,
             'rating': self.rating,
-            'link': self.link,
-            'upc': self.upc,
-            'poster': self.poster,
-            'genres': [genre.name for genre in self.genres],
-            'overview': self.overview
+            'link': self.link
         }
 
-# class Videogame(Entry):
-#     __mapper_args__ = {
-#         'polymorphic_identity': 'videogame',
-#     }
-#
-#     title = db.Column(db.String(100))
-#     overview = db.Column(db.String(600))
-#     upc = db.Column(db.String(20), unique=True, nullable=True)
-#     poster = db.Column(db.String(255))
-#
-#     def __init__(self, title, overview=None, upc=None, poster=None, user_id=None, collection_id=None):
-#         super().__init__(user_id=user_id, collection_id=collection_id, type='videogame')
-#         self.title = title
-#         self.overview = overview
-#         self.upc = upc
-#         self.poster = poster
-#
-#     def to_dict(self):
-#         base_dict = super().to_dict()
-#         return {
-#             **base_dict,
-#             'title': self.title,
-#             'overview': self.overview,
-#             'upc': self.upc,
-#             'poster': self.poster,
-#             'genres': [genre.name for genre in self.genres]
-#         }
+
+
+class Videogame(Entry):
+    __mapper_args__ = {
+        'polymorphic_identity': 'videogame',
+    }
+
+    def __init__(self, title, overview=None, upc=None, poster=None, user_id=None, collection_id=None):
+        super().__init__(
+            title=title,
+            overview=overview,
+            upc=upc,
+            poster=poster,
+            user_id=user_id,
+            collection_id=collection_id,
+            type='videogame'
+        )
+
+    def to_dict(self):
+        return super().to_dict()
+
+
 
