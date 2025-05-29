@@ -1,39 +1,39 @@
-{% extends 'layout.html' %}
-{% block body %}
-{{ path|safe }}
-    {% if current_user.is_authenticated %}
-        <h1>Sort Your Collections</h1>
-        <ul>
-            {% for collection in collections %}
-                <li>
-                    <a href="/sort/{{ collection.id }}">{{ collection.collection_title }}</a>
-                </li>
-            {% endfor %}
-        </ul>
+<!--{% extends 'layout.html' %}-->
+<!--{% block body %}-->
+<!--{{ path|safe }}-->
+<!--    {% if current_user.is_authenticated %}-->
+<!--        <h1>Sort Your Collections</h1>-->
+<!--        <ul>-->
+<!--            {% for collection in collections %}-->
+<!--                <li>-->
+<!--                    <a href="/sort/{{ collection.id }}">{{ collection.collection_title }}</a>-->
+<!--                </li>-->
+<!--            {% endfor %}-->
+<!--        </ul>-->
 
-        {% if selected_collection %}
-            <h2>Entries in {{ selected_collection.collection_title }}</h2>
-            <div style="height: 300px; overflow-y: auto; border: 1px solid #ccc; margin-top: 10px; padding: 5px;">
-                {% if entries %}
-                    <ul>
-                        {% for entry in entries %}
-                            <li>{{ entry.title }} ({{ entry.genre }})
-                                {% if entry.link %}
-                                    <a href="{{ entry.link }}" target="_blank">(Link)</a>
-                                {% endif %}
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p>No entries in this collection yet.</p>
-                {% endif %}
-            </div>
-        {% else %}
-            <p>Select a collection to view its entries.</p>
-        {% endif %}
+<!--        {% if selected_collection %}-->
+<!--            <h2>Entries in {{ selected_collection.collection_title }}</h2>-->
+<!--            <div style="height: 300px; overflow-y: auto; border: 1px solid #ccc; margin-top: 10px; padding: 5px;">-->
+<!--                {% if entries %}-->
+<!--                    <ul>-->
+<!--                        {% for entry in entries %}-->
+<!--                            <li>{{ entry.title }} ({{ entry.genre }})-->
+<!--                                {% if entry.link %}-->
+<!--                                    <a href="{{ entry.link }}" target="_blank">(Link)</a>-->
+<!--                                {% endif %}-->
+<!--                            </li>-->
+<!--                        {% endfor %}-->
+<!--                    </ul>-->
+<!--                {% else %}-->
+<!--                    <p>No entries in this collection yet.</p>-->
+<!--                {% endif %}-->
+<!--            </div>-->
+<!--        {% else %}-->
+<!--            <p>Select a collection to view its entries.</p>-->
+<!--        {% endif %}-->
 
-    {% else %}
-    <a href="/loginform">Click here to login or register!</a>
-    {% endif %}
+<!--    {% else %}-->
+<!--    <a href="/loginform">Click here to login or register!</a>-->
+<!--    {% endif %}-->
 
-{% endblock %}
+<!--{% endblock %}-->

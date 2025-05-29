@@ -4,6 +4,9 @@ import requests
 from flask import request, jsonify, send_from_directory, render_template
 from models import db, User, Collection, Entry, Media, Genre, Videogame
 from tmdb_api import search_movie, get_movie_details, get_imdb_link_from_movie_id
+from sqlalchemy.orm import aliased
+from sqlalchemy.sql import func
+
 
 def init_routes(app):
     @app.route('/hi', methods=['GET'])
@@ -129,6 +132,10 @@ def init_routes(app):
     def serve_collection_detail_page():
         return send_from_directory('.', 'collection_detail.html')
 
+    @app.route('/collections/<int:collection_id>/detail')
+    def collection_detail(collection_id):
+        return render_template('collection_detail.html', collection_id=collection_id)
+
     @app.route('/entry_detail.html')
     def serve_entry_detail_page():
         return send_from_directory('.', 'entry_detail.html')
@@ -151,9 +158,38 @@ def init_routes(app):
     def scanner_results_page():
         return send_from_directory('.', 'scanner_results.html')
 
-    @app.route('/sort.html')
-    def sort_page():
-        return send_from_directory('.', 'sort.html')
+    from flask import jsonify
+
+    @app.route('/collections/<int:collection_id>/sort')
+    def sort_collection(collection_id):
+        sort_by = request.args.get('sort', 'alpha')
+
+        collection = Collection.query.get_or_404(collection_id)
+        entry_type = collection.collection_type  # e.g., 'media', 'videogames', etc.
+
+        # Determine the appropriate model
+        if entry_type == 'media':
+            query = db.session.query(Media).filter_by(collection_id=collection.id)
+
+            if sort_by == 'genre':
+                genre_alias = aliased(Genre)
+                query = query.outerjoin(Media.genres.of_type(genre_alias))
+                query = query.order_by(func.coalesce(genre_alias.name, ""), Media.title.asc())
+            else:
+                query = query.order_by(Media.title.asc())
+
+            entries = query.all()
+
+        elif entry_type == 'videogames':
+            entries = Videogame.query.filter_by(collection_id=collection.id).order_by(Videogame.title.asc()).all()
+
+        else:
+            entries = Entry.query.filter_by(collection_id=collection.id).order_by(Entry.title.asc()).all()
+
+        # Annotate entries with type for frontend
+        annotated_entries = [{**entry.to_dict(), 'type': entry_type} for entry in entries]
+
+        return jsonify(annotated_entries)
 
     @app.route('/create_collection.html')
     def create_collection_page():
@@ -459,3 +495,96 @@ def init_routes(app):
             return jsonify({"imdb_link": imdb_link})
 
         return jsonify({"error": "IMDb link not found"}), 404
+
+    @app.route('/collections/<int:collection_id>/entries')
+    def get_collection_entries(collection_id):
+        sort = request.args.get('sort', 'alpha')  # default to alphabetical
+
+        collection = Collection.query.get_or_404(collection_id)
+        entry_type = collection.collection_type  # Dynamically determine type from collection
+        genre_alias = aliased(Genre)
+
+        if entry_type == 'media':
+            query = db.session.query(Media).filter_by(collection_id=collection.id)
+
+            if sort == 'genre':
+                query = query.outerjoin(Media.genres.of_type(genre_alias))
+                query = query.order_by(func.coalesce(genre_alias.name, ""), Media.title.asc())
+            else:
+                query = query.order_by(Media.title.asc())
+
+            entries = query.all()
+
+        elif entry_type == 'videogames':
+            entries = Videogame.query.filter_by(collection_id=collection.id).order_by(
+                Videogame.title.asc()).all()
+
+        else:  # default to general entries
+            entries = Entry.query.filter_by(collection_id=collection.id).order_by(
+                Entry.title.asc()).all()
+
+        return jsonify([entry.to_dict() for entry in entries])
+
+    @app.route('/collections/<int:collection_id>/view')
+    def view_collection_detail(collection_id):
+        sort = request.args.get('sort', 'alpha')  # default to alphabetical
+
+        collection = Collection.query.get_or_404(collection_id)
+        entry_type = collection.collection_type
+        genre_alias = aliased(Genre)
+
+        if entry_type == 'media':
+            query = db.session.query(Media).filter_by(collection_id=collection.id)
+
+            if sort == 'genre':
+                query = query.outerjoin(Media.genres.of_type(genre_alias))
+                query = query.order_by(func.coalesce(genre_alias.name, ""), Media.title.asc())
+            else:
+                query = query.order_by(Media.title.asc())
+
+            entries = query.all()
+
+        elif entry_type == 'videogames':
+            entries = Videogame.query.filter_by(collection_id=collection.id).order_by(
+                Videogame.title.asc()).all()
+
+        else:
+            entries = Entry.query.filter_by(collection_id=collection.id).order_by(
+                Entry.title.asc()).all()
+
+        return render_template(
+            'collection_detail.html',
+            collection=collection,
+            entries=entries,
+            entryType=entry_type
+        )
+
+    @app.route('/collections/<int:collection_id>/sort', methods=['GET'])
+    def sort_collection_entries(collection_id):
+        sort_by = request.args.get('sort_by', 'alphabetical')
+        collection = Collection.query.get_or_404(collection_id)
+
+        entry_type = collection.collection_type
+
+        if entry_type == 'media':
+            query = db.session.query(Media).filter_by(collection_id=collection.id)
+            genre_alias = aliased(Genre)
+
+            if sort_by == 'genre':
+                query = query.outerjoin(Media.genres.of_type(genre_alias))
+                query = query.order_by(func.coalesce(genre_alias.name, ""), Media.title.asc())
+            else:
+                query = query.order_by(Media.title.asc())
+
+            entries = query.all()
+
+        elif entry_type == 'videogames':
+            entries = Videogame.query.filter_by(collection_id=collection.id).order_by(Videogame.title.asc()).all()
+
+        else:
+            entries = Entry.query.filter_by(collection_id=collection.id).order_by(Entry.title.asc()).all()
+
+        # Annotate entries with type for the frontend
+        annotated_entries = [{**entry.to_dict(), 'type': entry_type} for entry in entries]
+
+        return jsonify(annotated_entries)

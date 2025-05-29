@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .then(data => {
                 if (data && data.entry_id) {
-                    window.location.href = `/My_Collection/entry_detail.html?entryid=${data.entry_id}`;
+                    window.location.href = `/My_Collection/entry_detail.html?entry_id=${data.entry_id}`;
                 } else {
                     alert('Could not retrieve a random entry ID.');
                 }
