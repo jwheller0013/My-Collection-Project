@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Scanner Results</title>
-    <link rel="stylesheet" href="./koley.css?v=1" />
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scanner Results</title>
+  <link rel="stylesheet" href="./koley.css?v=1" />
 </head>
 
 <body>
@@ -48,6 +48,7 @@
         <label for="overview">Overview:</label>
         <textarea id="overview" name="overview"></textarea>
       </div>
+      <!-- Genre field will be added dynamically here -->
     </div>
 
     <button type="submit">Add to Collection</button>
@@ -71,7 +72,7 @@
       const formSubmissionMessage = document.getElementById('form-submission-message');
       const API_URL = 'http://localhost:8080';
 
-      // --- 1. Populate collections ---
+      // 1. Populate collections
       function fetchCollections() {
           fetch(`${API_URL}/collections`)
               .then(response => response.json())
@@ -90,13 +91,13 @@
               });
       }
 
-      // --- 2. Extract UPC from URL ---
+      // 2. Extract UPC from URL
       function getUPCFromURL() {
           const urlParams = new URLSearchParams(window.location.search);
           return urlParams.get('upc');
       }
 
-      // --- 3. Lookup TMDB data using backend ---
+      // 3. Lookup TMDB data using backend
       function lookupUPC(upc) {
           fetch(`${API_URL}/api/upc_lookup`, {
               method: 'POST',
@@ -104,9 +105,7 @@
               body: JSON.stringify({ upc: upc })
           })
           .then(response => {
-              if (!response.ok) {
-                  throw new Error('UPC lookup failed.');
-              }
+              if (!response.ok) throw new Error('UPC lookup failed.');
               return response.json();
           })
           .then(data => {
@@ -116,14 +115,33 @@
               if (data.overview) document.getElementById('overview').value = data.overview;
               if (data.poster) document.getElementById('poster').value = data.poster;
               if (data.rating !== undefined) {
-                  // Round the rating here before setting it in the form
                   let roundedRating = Math.round(data.rating * 10) / 10;
                   document.getElementById('rating').value = roundedRating;
-                  console.log("Rating set in input field:", roundedRating); // Log to verify the rounded value
               }
               if (data.tv_film !== undefined) document.getElementById('tv_film').value = data.tv_film;
               if (data.link) document.getElementById('link').value = data.link;
               document.getElementById('upc').value = upc;
+
+              // --- Inject genre field dynamically ---
+              if (data.genres && data.genres.length > 0) {
+                  const existingGenreField = document.getElementById('genre');
+                  if (!existingGenreField) {
+                      const genreNames = data.genres.map(genre => genre.name).join(', ');
+
+                      const genreInput = document.createElement('input');
+                      genreInput.type = 'text';
+                      genreInput.id = 'genre';
+                      genreInput.name = 'genre';
+                      genreInput.value = genreNames;
+                      genreInput.readOnly = true;
+
+                      const genreDiv = document.createElement('div');
+                      genreDiv.innerHTML = '<label for="genre">Genre:</label>';
+                      genreDiv.appendChild(genreInput);
+
+                      document.getElementById('media-fields').appendChild(genreDiv);
+                  }
+              }
           })
           .catch(error => {
               console.warn('Falling back to manual input:', error);
@@ -131,7 +149,7 @@
           });
       }
 
-      // --- 4. Form submission handler ---
+      // 4. Form submission handler
       document.getElementById('add-to-collection-form').addEventListener('submit', function (event) {
           event.preventDefault();
 
@@ -144,17 +162,10 @@
           }
 
           let rating = parseFloat(document.getElementById('rating').value);
-
-          // Debugging: Log the value before rounding
-          console.log("Rating before rounding:", rating);
-
-          // Round the rating to 1 decimal place if it's a valid number
           if (!isNaN(rating)) {
-              rating = Math.round(rating * 10) / 10; // Round to 1 decimal place
-              console.log("Rating after rounding:", rating); // Log the value after rounding
+              rating = Math.round(rating * 10) / 10;
           } else {
-              rating = null; // Handle case where rating is not provided or is invalid
-              console.log("Invalid rating, setting to null.");
+              rating = null;
           }
 
           const formData = {
@@ -162,11 +173,12 @@
               type: selectedCollectionType,
               title: document.getElementById('title').value,
               tv_film: parseInt(document.getElementById('tv_film').value),
-              rating: rating, // Use the rounded rating value here
+              rating: rating,
               link: document.getElementById('link').value,
               poster: document.getElementById('poster').value,
               upc: document.getElementById('upc').value,
-              overview: document.getElementById('overview').value
+              overview: document.getElementById('overview').value,
+              genre: document.getElementById('genre')?.value || ''
           };
 
           fetch(`${API_URL}/entries`, {
@@ -193,11 +205,8 @@
       // --- Init ---
       fetchCollections();
       const upc = getUPCFromURL();
-      if (upc) {
-          lookupUPC(upc);
-      }
+      if (upc) lookupUPC(upc);
   });
-
   </script>
 
 </body>

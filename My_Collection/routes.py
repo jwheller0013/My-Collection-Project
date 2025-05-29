@@ -196,6 +196,17 @@ def init_routes(app):
         collection = Collection.query.get_or_404(collection_id)
         entry_type = collection.collection_type
 
+        # Parse genre names from comma-separated string
+        genre_names = [g.strip() for g in data.get('genre', '').split(',') if g.strip()]
+        genres = []
+
+        for name in genre_names:
+            genre = Genre.query.filter_by(name=name).first()
+            if not genre:
+                genre = Genre(name=name)
+                db.session.add(genre)
+            genres.append(genre)
+
         if entry_type == 'media':
             title = data.get('title')
             tv_film = data.get('tv_film')
@@ -208,7 +219,6 @@ def init_routes(app):
             if not title:
                 return jsonify({"msg": "Title is required for media entries"}), 400
 
-            # Convert empty string UPC to None
             if upc == "":
                 upc = None
 
@@ -247,11 +257,19 @@ def init_routes(app):
 
         elif entry_type == 'general':
             new_entry = Entry(
+                title=data.get('title'),
+                overview=data.get('overview'),
+                upc=data.get('upc'),
+                poster=data.get('poster'),
                 user_id=user_id,
                 collection_id=collection_id,
             )
+
         else:
             return jsonify({"msg": f"Invalid entry type: {entry_type}"}), 400
+
+        # Attach genres
+        new_entry.genres.extend(genres)
 
         db.session.add(new_entry)
         db.session.commit()
@@ -263,7 +281,7 @@ def init_routes(app):
         data = request.get_json()
         title = data.get('title')
         collection_id = data.get('collection_id')
-        user_id = 1  # Update later when having more users
+        user_id = 1  # Update later to fetch dynamically based on authenticated user
 
         if not title or not collection_id:
             return jsonify({"msg": "Title and collection ID are required"}), 400
@@ -278,12 +296,14 @@ def init_routes(app):
         # Get or create genre entries
         genre_objs = []
         for genre in details.get('genres', []):
+            # Try to fetch the genre, if not found, create it
             genre_obj = Genre.query.filter_by(name=genre['name']).first()
             if not genre_obj:
                 genre_obj = Genre(name=genre['name'])
                 db.session.add(genre_obj)
             genre_objs.append(genre_obj)
 
+        # Create the new media entry (movie)
         new_media = Media(
             title=details.get('title'),
             tv_film=True,  # it's a movie
@@ -292,17 +312,26 @@ def init_routes(app):
             poster=f"https://image.tmdb.org/t/p/w500{details.get('poster_path')}" if details.get('poster_path') else "",
             upc=None,
             overview=details.get('overview'),
-            user_id=user_id,
+            user_id=user_id,  # Replace later with the actual authenticated user's ID
             collection_id=collection_id
         )
 
+        # Associate genres with the new media entry
         for genre in genre_objs:
             new_media.genres.append(genre)
 
         db.session.add(new_media)
         db.session.commit()
 
-        return jsonify({"msg": "Movie imported successfully", "entry_id": new_media.id}), 201
+        # Extract genre names to return in the response
+        genre_names = [genre.name for genre in genre_objs]
+
+        # Return success message along with the created entry's ID and genres
+        return jsonify({
+            "msg": "Movie imported successfully",
+            "entry_id": new_media.id,
+            "genres": genre_names
+        }), 201
 
     @app.route('/api/tmdb_import_preview', methods=['POST'])
     def preview_tmdb_movie():
@@ -366,7 +395,7 @@ def init_routes(app):
 
         if is_film:
             try:
-                movie = search_movie(title)
+                movie = search_movie(title)  # Search for movie on TMDB
                 print(f"TMDB result: {movie}")
             except requests.RequestException as e:
                 return jsonify({"msg": "TMDB lookup failed", "error": str(e)}), 500
@@ -378,7 +407,18 @@ def init_routes(app):
                 }), 200
 
             try:
-                details = get_movie_details(movie['id'])
+                details = get_movie_details(movie['id'])  # Get detailed movie info from TMDB
+                print(f"TMDB movie details: {details}")
+
+                genres = details.get('genres', [])
+                if not genres:
+                    print("No genres found for this movie")
+                    genre_names = ['Unknown']  # Fallback if no genres are found
+                else:
+                    genre_names = [genre['name'] for genre in genres]
+
+                print(f"Genres: {genre_names}")
+
             except requests.RequestException as e:
                 return jsonify({"msg": "Failed to fetch movie details", "error": str(e)}), 500
 
@@ -389,11 +429,12 @@ def init_routes(app):
                 "poster": f"https://image.tmdb.org/t/p/w500{movie.get('poster_path')}" if movie.get(
                     'poster_path') else None,
                 "link": f"https://www.imdb.com/title/{details.get('imdb_id')}" if details.get('imdb_id') else "",
-                "tv_film": 1,
-                "upc": upc
+                "tv_film": 1,  # Movie
+                "upc": upc,
+                "genres": genre_names
             }), 200
 
-        # Non-movie fallback
+        # Non-movie fallback (non-film item)
         return jsonify({
             "title": title,
             "overview": description,
