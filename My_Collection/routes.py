@@ -563,28 +563,33 @@ def init_routes(app):
     def sort_collection_entries(collection_id):
         sort_by = request.args.get('sort_by', 'alphabetical')
         collection = Collection.query.get_or_404(collection_id)
+        entry_type = collection.collection_type.lower()
 
-        entry_type = collection.collection_type
+        entries = []
 
         if entry_type == 'media':
-            query = db.session.query(Media).filter_by(collection_id=collection.id)
-            genre_alias = aliased(Genre)
-
             if sort_by == 'genre':
-                query = query.outerjoin(Media.genres.of_type(genre_alias))
-                query = query.order_by(func.coalesce(genre_alias.name, ""), Media.title.asc())
+                genre_alias = aliased(Genre)
+                entries = (
+                    db.session.query(Media)
+                    .filter(Media.collection_id == collection_id)
+                    .outerjoin(Media.genres.of_type(genre_alias))
+                    .order_by(func.coalesce(genre_alias.name, ""), Media.title.asc())
+                    .all()
+                )
             else:
-                query = query.order_by(Media.title.asc())
+                entries = Media.query.filter_by(collection_id=collection_id).order_by(Media.title.asc()).all()
 
-            entries = query.all()
-
-        elif entry_type == 'videogames':
-            entries = Videogame.query.filter_by(collection_id=collection.id).order_by(Videogame.title.asc()).all()
+        elif entry_type == 'videogame':
+            entries = Videogame.query.filter_by(collection_id=collection_id).order_by(Videogame.title.asc()).all()
 
         else:
-            entries = Entry.query.filter_by(collection_id=collection.id).order_by(Entry.title.asc()).all()
+            # fallback for generic Entry class if used
+            entries = Entry.query.filter_by(collection_id=collection_id).order_by(Entry.title.asc()).all()
 
-        # Annotate entries with type for the frontend
+        # Add debug print
+        for entry in entries:
+            print(f"{entry.title} - Genres: {[g.name for g in getattr(entry, 'genres', [])]}")
+
         annotated_entries = [{**entry.to_dict(), 'type': entry_type} for entry in entries]
-
         return jsonify(annotated_entries)

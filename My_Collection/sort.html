@@ -1,60 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Sort Collection Entries</title>
+    <link rel="stylesheet" href="./koley.css?v=1" />
 </head>
 <body>
-    <h1 id="collection-title">Collection Entries</h1>
+    <div class="page">
+        <header>
+            <h1 id="collection-title">Collection Entries</h1>
+            <a href="/My_collection/collections.html">Back to Collections</a>
+        </header>
 
-    <label for="sort-select">Sort by:</label>
-    <select id="sort-select">
-        <option value="alphabetical">Alphabetical</option>
-        <option value="genre">Genre</option>
-    </select>
+        <div class="content">
+            <div class="subforumheader">
+                <label style="margin-right: 15px;">
+                    <input type="radio" name="sortStyle" value="alphabetical" checked>
+                    Alphabetical
+                </label>
+                <label>
+                    <input type="radio" name="sortStyle" value="genre">
+                    Genre
+                </label>
+            </div>
 
-    <ul id="entries-list">
-        <!-- Entries will be injected here -->
-    </ul>
+            <div class="subforumheader" id="genre-checkboxes"></div>
+
+            <div id="entries-list"></div>
+        </div>
+
+        <footer class="footer">
+            <p><a href="/My_collection/collections.html">Collections</a></p>
+            <p><a href="/">Homepage</a></p>
+            <p><a href="/My_collection/scanner.html">Scan</a></p>
+            <p><a id="random-entry-link-collection" href="#">Random</a></p>
+        </footer>
+    </div>
 
     <script>
         const API_URL = 'http://localhost:8080';
+        let currentSort = 'alphabetical';
+        let selectedGenres = new Set();
+        let allGenres = new Set();
+        let cachedEntries = [];
 
         function getCollectionIdFromUrl() {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get('collectionid');
-        }
-
-        function fetchAndDisplayEntries(collectionId, sortBy = 'alphabetical') {
-            fetch(`${API_URL}/collections/${collectionId}/sort?sort_by=${sortBy}`)
-                .then(res => res.json())
-                .then(data => {
-                    displayEntries(data);
-                })
-                .catch(error => {
-                    console.error('Error fetching sorted entries:', error);
-                    document.getElementById('entries-list').innerHTML = '<li>Error loading entries.</li>';
-                });
-        }
-
-        function displayEntries(entries) {
-            const entriesList = document.getElementById('entries-list');
-            entriesList.innerHTML = ''; // Clear previous entries
-
-            entries.forEach(entry => {
-                const li = document.createElement('li');
-                li.innerHTML = `<strong>${entry.title}</strong>`;
-
-                if (entry.type === 'media' && entry.genres) {
-                    li.innerHTML += ` - Genres: ${entry.genres.join(', ')}`;
-                } else if (entry.type === 'videogames' && entry.platform) {
-                    li.innerHTML += ` - Platform: ${entry.platform}`;
-                } else if (entry.description) {
-                    li.innerHTML += ` - ${entry.description}`;
-                }
-
-                entriesList.appendChild(li);
-            });
         }
 
         function fetchAndSetCollectionTitle(collectionId) {
@@ -65,25 +57,132 @@
                     if (collection) {
                         document.getElementById('collection-title').textContent = collection.collection_title;
                     }
-                })
-                .catch(() => {
-                    document.getElementById('collection-title').textContent = 'Collection Entries';
                 });
+        }
+
+        function fetchAndDisplayEntries(collectionId) {
+            fetch(`${API_URL}/collections/${collectionId}/entries`)
+                .then(res => res.json())
+                .then(data => {
+                    cachedEntries = data;
+                    extractGenres(data);
+                    displayEntries(data);
+                });
+        }
+
+        function extractGenres(entries) {
+            entries.forEach(entry => entry.genres.forEach(g => allGenres.add(g)));
+            buildGenreCheckboxes(); // Only build once
+        }
+
+        function buildGenreCheckboxes() {
+            const container = document.getElementById('genre-checkboxes');
+            if (container.children.length > 0) return;
+
+            Array.from(allGenres).sort().forEach(genre => {
+                const label = document.createElement('label');
+                label.style.marginRight = '10px';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = genre;
+
+                checkbox.addEventListener('change', () => {
+                    if (checkbox.checked) {
+                        selectedGenres.add(genre);
+                    } else {
+                        selectedGenres.delete(genre);
+                    }
+                    displayEntries(cachedEntries);
+                });
+
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(` ${genre}`));
+                container.appendChild(label);
+            });
+        }
+
+        function displayEntries(entries) {
+            const entriesList = document.getElementById('entries-list');
+            entriesList.innerHTML = '';
+
+            if (currentSort === 'genre' && selectedGenres.size > 0) {
+                const genreGroups = {};
+                const others = [];
+
+                selectedGenres.forEach(g => genreGroups[g] = []);
+
+                entries.forEach(entry => {
+                    let matched = false;
+                    for (const genre of selectedGenres) {
+                        if (entry.genres.includes(genre)) {
+                            genreGroups[genre].push(entry);
+                            matched = true;
+                            break;
+                        }
+                    }
+                    if (!matched) others.push(entry);
+                });
+
+                selectedGenres.forEach(genre => {
+                    if (genreGroups[genre].length > 0) {
+                        const genreHeader = document.createElement('div');
+                        genreHeader.className = 'subforumheader';
+                        genreHeader.textContent = genre;
+                        entriesList.appendChild(genreHeader);
+
+                        genreGroups[genre].forEach(entry => {
+                            const div = document.createElement('div');
+                            div.className = 'actualpost';
+                            div.innerHTML = `
+                                <div class="actualposttitle"><strong>${entry.title}</strong> - ${entry.genres.join(', ')}</div>
+                            `;
+                            entriesList.appendChild(div);
+                        });
+                    }
+                });
+
+                if (others.length > 0) {
+                    const otherHeader = document.createElement('div');
+                    otherHeader.className = 'subforumheader';
+                    otherHeader.textContent = 'Other';
+                    entriesList.appendChild(otherHeader);
+
+                    others.forEach(entry => {
+                        const div = document.createElement('div');
+                        div.className = 'actualpost';
+                        div.innerHTML = `
+                            <div class="actualposttitle"><strong>${entry.title}</strong> - ${entry.genres.join(', ')}</div>
+                        `;
+                        entriesList.appendChild(div);
+                    });
+                }
+
+            } else {
+                const sorted = [...entries].sort((a, b) => a.title.localeCompare(b.title));
+                sorted.forEach(entry => {
+                    const div = document.createElement('div');
+                    div.className = 'actualpost';
+                    div.innerHTML = `
+                        <div class="actualposttitle"><strong>${entry.title}</strong> - ${entry.genres.join(', ')}</div>
+                    `;
+                    entriesList.appendChild(div);
+                });
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             const collectionId = getCollectionIdFromUrl();
-            if (!collectionId) {
-                document.getElementById('entries-list').innerHTML = '<li>Invalid Collection ID</li>';
-                return;
-            }
+            if (!collectionId) return;
 
             fetchAndSetCollectionTitle(collectionId);
-            fetchAndDisplayEntries(collectionId); // Default sort
+            fetchAndDisplayEntries(collectionId);
 
-            document.getElementById('sort-select').addEventListener('change', (e) => {
-                const sortBy = e.target.value;
-                fetchAndDisplayEntries(collectionId, sortBy);
+            document.querySelectorAll('input[name="sortStyle"]').forEach(radio => {
+                radio.addEventListener('change', () => {
+                    currentSort = radio.value;
+                    displayEntries(cachedEntries);
+                });
             });
         });
     </script>
