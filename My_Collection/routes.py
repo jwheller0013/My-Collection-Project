@@ -327,7 +327,7 @@ def init_routes(app):
 
         # Get or create genre entries
         genre_objs = []
-        for genre in details.get('genres', []):
+        for genre in details.get('Genres', []):
             # Try to fetch the genre, if not found, create it
             genre_obj = Genre.query.filter_by(name=genre['name']).first()
             if not genre_obj:
@@ -345,7 +345,7 @@ def init_routes(app):
             upc=None,
             overview=details.get('overview'),
             user_id=user_id,  # Replace later with the actual authenticated user's ID
-            collection_id=collection_id
+            collection_id=collection_id,
         )
 
         # Associate genres with the new media entry
@@ -463,7 +463,7 @@ def init_routes(app):
                 "link": f"https://www.imdb.com/title/{details.get('imdb_id')}" if details.get('imdb_id') else "",
                 "tv_film": 1,  # Movie
                 "upc": upc,
-                "genres": genre_names
+                "genres": [{"name": genre_name} for genre_name in genre_names]
             }), 200
 
         # Non-movie fallback (non-film item)

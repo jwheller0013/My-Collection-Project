@@ -6,19 +6,102 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Scanner</title>
     <link rel="stylesheet" href="./koley.css?v=1" />
+    <style>
+        .camera-container {
+            position: relative;
+            max-width: 100%;
+            margin: 20px 0;
+        }
+
+        #camera-video {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            border: 2px solid #333;
+            border-radius: 8px;
+        }
+
+        .camera-controls {
+            margin: 10px 0;
+        }
+
+        .camera-controls button {
+            margin: 5px;
+            padding: 10px 15px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .start-camera {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .stop-camera {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .capture-frame {
+            background-color: #2196F3;
+            color: white;
+        }
+
+        #barcode-result {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #e8f5e8;
+            border: 1px solid #4CAF50;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .manual-entry {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #ccc;
+        }
+    </style>
 </head>
 
 <body>
     <h1>Please Scan or Enter UPC</h1>
-    <h2>Camera Screen</h2>
-    <h3><a href="/My_collection/scanner_results.html">Camera Button</a></h3>
 
-    <h2>Enter UPC Manually</h2>
-    <form id="upc-form">
-        <label for="upc">UPC:</label>
-        <input type="text" id="upc" name="upc" required>
-        <button type="submit">Add by UPC</button>
-    </form>
+    <h2>Camera Scanner</h2>
+    <div class="camera-container">
+        <video id="camera-video" class="hidden" autoplay muted playsinline></video>
+        <canvas id="camera-canvas" class="hidden"></canvas>
+
+        <div class="camera-controls">
+            <button id="start-camera" class="start-camera">Start Camera</button>
+            <button id="stop-camera" class="stop-camera hidden">Stop Camera</button>
+            <button id="capture-frame" class="capture-frame hidden">Capture Barcode</button>
+        </div>
+
+        <div id="barcode-result">
+            <strong>Barcode detected:</strong> <span id="detected-barcode"></span>
+            <button id="use-detected-barcode">Use This Barcode</button>
+        </div>
+
+        <div id="camera-status">
+            <p>Click "Start Camera" to begin scanning barcodes</p>
+        </div>
+    </div>
+
+    <div class="manual-entry">
+        <h2>Enter UPC Manually</h2>
+        <form id="upc-form">
+            <label for="upc">UPC:</label>
+            <input type="text" id="upc" name="upc" required>
+            <button type="submit">Add by UPC</button>
+        </form>
+    </div>
 
     <footer>
         <hr>
@@ -28,11 +111,179 @@
         <p><a id="random-entry-link-collection" href="#">Random</a></p>
     </footer>
 
+    <!-- Include QuaggaJS for barcode scanning -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
     <script src="./random_entry.js"></script>
+
     <script>
+        let currentStream = null;
+        let isScanning = false;
+
+        // Camera controls
+        const startCameraBtn = document.getElementById('start-camera');
+        const stopCameraBtn = document.getElementById('stop-camera');
+        const captureFrameBtn = document.getElementById('capture-frame');
+        const video = document.getElementById('camera-video');
+        const canvas = document.getElementById('camera-canvas');
+        const cameraStatus = document.getElementById('camera-status');
+        const barcodeResult = document.getElementById('barcode-result');
+        const detectedBarcode = document.getElementById('detected-barcode');
+        const useDetectedBtn = document.getElementById('use-detected-barcode');
+
+        // Start camera
+        startCameraBtn.addEventListener('click', async function() {
+            try {
+                cameraStatus.innerHTML = '<p>Starting camera...</p>';
+
+                currentStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'environment', // Use back camera if available
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    }
+                });
+
+                video.srcObject = currentStream;
+                video.classList.remove('hidden');
+
+                startCameraBtn.classList.add('hidden');
+                stopCameraBtn.classList.remove('hidden');
+                captureFrameBtn.classList.remove('hidden');
+
+                cameraStatus.innerHTML = '<p>Camera active. Point at a barcode and click "Capture Barcode"</p>';
+
+                // Start continuous scanning
+                startBarcodeScanning();
+
+            } catch (err) {
+                console.error('Error accessing camera:', err);
+                cameraStatus.innerHTML = '<p style="color: red;">Error accessing camera. Please check permissions.</p>';
+            }
+        });
+
+        // Stop camera
+        stopCameraBtn.addEventListener('click', function() {
+            stopCamera();
+        });
+
+        function stopCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+
+            if (isScanning) {
+                Quagga.stop();
+                isScanning = false;
+            }
+
+            video.classList.add('hidden');
+            startCameraBtn.classList.remove('hidden');
+            stopCameraBtn.classList.add('hidden');
+            captureFrameBtn.classList.add('hidden');
+            barcodeResult.style.display = 'none';
+
+            cameraStatus.innerHTML = '<p>Camera stopped. Click "Start Camera" to begin scanning.</p>';
+        }
+
+        // Capture single frame
+        captureFrameBtn.addEventListener('click', function() {
+            captureFrame();
+        });
+
+        function captureFrame() {
+            if (!currentStream) return;
+
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0);
+
+            cameraStatus.innerHTML = '<p>Frame captured. Processing...</p>';
+
+            // Process the captured frame for barcodes
+            processCapturedFrame();
+        }
+
+        function startBarcodeScanning() {
+            if (isScanning) return;
+
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: video,
+                    constraints: {
+                        width: 640,
+                        height: 480,
+                        facingMode: "environment"
+                    }
+                },
+                decoder: {
+                    readers: [
+                        "code_128_reader",
+                        "ean_reader",
+                        "ean_8_reader",
+                        "code_39_reader",
+                        "code_39_vin_reader",
+                        "codabar_reader",
+                        "upc_reader",
+                        "upc_e_reader"
+                    ]
+                }
+            }, function(err) {
+                if (err) {
+                    console.error('QuaggaJS initialization error:', err);
+                    return;
+                }
+                Quagga.start();
+                isScanning = true;
+            });
+
+            // Listen for barcode detection
+            Quagga.onDetected(function(result) {
+                const code = result.codeResult.code;
+                console.log('Barcode detected:', code);
+
+                // Show the detected barcode
+                detectedBarcode.textContent = code;
+                barcodeResult.style.display = 'block';
+
+                // Auto-fill the manual input field
+                document.getElementById('upc').value = code;
+
+                cameraStatus.innerHTML = '<p style="color: green;">Barcode detected! You can use it or continue scanning.</p>';
+            });
+        }
+
+        function processCapturedFrame() {
+            // This is a fallback method for single frame capture
+            // The continuous scanning above is more effective
+            cameraStatus.innerHTML = '<p>Use continuous scanning for better results, or try capturing another frame.</p>';
+        }
+
+        // Use detected barcode
+        useDetectedBtn.addEventListener('click', function() {
+            const barcode = detectedBarcode.textContent;
+            if (barcode) {
+                document.getElementById('upc').value = barcode;
+                processUPC(barcode);
+            }
+        });
+
+        // Manual form submission
         document.getElementById('upc-form').addEventListener('submit', function (e) {
             e.preventDefault();
             const upc = document.getElementById('upc').value;
+            processUPC(upc);
+        });
+
+        // Process UPC (either from manual entry or camera)
+        function processUPC(upc) {
+            if (!upc) return;
+
+            cameraStatus.innerHTML = '<p>Processing UPC...</p>';
+
             fetch('http://localhost:8080/api/upc_lookup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -50,6 +301,11 @@
                 console.error('Error during UPC lookup:', err);
                 window.location.href = `/My_collection/scanner_results.html?upc=${encodeURIComponent(upc)}`;
             });
+        }
+
+        // Cleanup when page is unloaded
+        window.addEventListener('beforeunload', function() {
+            stopCamera();
         });
     </script>
 </body>

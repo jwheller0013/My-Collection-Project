@@ -48,6 +48,8 @@
         <label for="overview">Overview:</label>
         <textarea id="overview" name="overview"></textarea>
       </div>
+<!--        <label for="genres">Genre:</label>-->
+<!--        <input type="genres" id="genres" name="genres">-->
       <!-- Genre field will be added dynamically here -->
     </div>
 
@@ -72,7 +74,8 @@
       const formSubmissionMessage = document.getElementById('form-submission-message');
       const API_URL = 'http://localhost:8080';
 
-      // 1. Populate collections
+      let resolvedGenres = [];
+
       function fetchCollections() {
           fetch(`${API_URL}/collections`)
               .then(response => response.json())
@@ -91,13 +94,11 @@
               });
       }
 
-      // 2. Extract UPC from URL
       function getUPCFromURL() {
           const urlParams = new URLSearchParams(window.location.search);
           return urlParams.get('upc');
       }
 
-      // 3. Lookup TMDB data using backend
       function lookupUPC(upc) {
           fetch(`${API_URL}/api/upc_lookup`, {
               method: 'POST',
@@ -122,23 +123,26 @@
               if (data.link) document.getElementById('link').value = data.link;
               document.getElementById('upc').value = upc;
 
-              // --- Inject genre field dynamically ---
               if (data.genres && data.genres.length > 0) {
+                  resolvedGenres = data.genres.map(g => g.name);
+
                   const existingGenreField = document.getElementById('genre');
                   if (!existingGenreField) {
-                      const genreNames = data.genres.map(genre => genre.name).join(', ');
+                      const genreDiv = document.createElement('div');
+
+                      const genreLabel = document.createElement('label');
+                      genreLabel.setAttribute('for', 'genre');
+                      genreLabel.textContent = 'Genre:';
+                      genreDiv.appendChild(genreLabel);
 
                       const genreInput = document.createElement('input');
                       genreInput.type = 'text';
                       genreInput.id = 'genre';
                       genreInput.name = 'genre';
-                      genreInput.value = genreNames;
+                      genreInput.value = resolvedGenres.join(', ');
                       genreInput.readOnly = true;
 
-                      const genreDiv = document.createElement('div');
-                      genreDiv.innerHTML = '<label for="genre">Genre:</label>';
                       genreDiv.appendChild(genreInput);
-
                       document.getElementById('media-fields').appendChild(genreDiv);
                   }
               }
@@ -149,7 +153,6 @@
           });
       }
 
-      // 4. Form submission handler
       document.getElementById('add-to-collection-form').addEventListener('submit', function (event) {
           event.preventDefault();
 
@@ -178,7 +181,7 @@
               poster: document.getElementById('poster').value,
               upc: document.getElementById('upc').value,
               overview: document.getElementById('overview').value,
-              genre: document.getElementById('genre')?.value || ''
+              genre: resolvedGenres.join(', ')
           };
 
           fetch(`${API_URL}/entries`, {
@@ -195,6 +198,9 @@
           .then(() => {
               formSubmissionMessage.textContent = 'Entry added successfully!';
               document.getElementById('add-to-collection-form').reset();
+              resolvedGenres = [];
+              const genreField = document.getElementById('genre');
+              if (genreField) genreField.parentElement.remove();
           })
           .catch(error => {
               console.error('Error adding entry:', error);
@@ -202,7 +208,6 @@
           });
       });
 
-      // --- Init ---
       fetchCollections();
       const upc = getUPCFromURL();
       if (upc) lookupUPC(upc);
