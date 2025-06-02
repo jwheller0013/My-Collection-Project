@@ -76,7 +76,11 @@ function showCollectionEntries(entries) {
             div.appendChild(imdbLink);
 
             let genres = document.createElement('p');
-            genres.textContent = `Genres: ${entry.genres ? entry.genres.join(', ') : 'N/A'}`;
+            // Fix: Extract genre names from the array of genre objects
+            const genreNames = entry.genres && entry.genres.length > 0
+                ? entry.genres.map(genre => genre.name).join(', ')
+                : 'N/A';
+            genres.textContent = `Genres: ${genreNames}`;
             div.appendChild(genres);
         }
 

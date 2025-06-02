@@ -35,6 +35,7 @@
             <p><a href="/My_collection/scanner.html">Scan</a></p>
             <p><a id="random-entry-link-collection" href="#">Random</a></p>
         </footer>
+        <script src="./random_entry.js"></script>
     </div>
 
     <script>
@@ -71,7 +72,18 @@
         }
 
         function extractGenres(entries) {
-            entries.forEach(entry => entry.genres.forEach(g => allGenres.add(g)));
+            // Fix: Extract genre names from genre objects
+            entries.forEach(entry => {
+                if (entry.genres && Array.isArray(entry.genres)) {
+                    entry.genres.forEach(genre => {
+                        // Handle both string and object formats
+                        const genreName = typeof genre === 'string' ? genre : genre.name;
+                        if (genreName) {
+                            allGenres.add(genreName);
+                        }
+                    });
+                }
+            });
             buildGenreCheckboxes(); // Only build once
         }
 
@@ -102,6 +114,24 @@
             });
         }
 
+        // Helper function to get genre names from entry
+        function getGenreNames(entry) {
+            if (!entry.genres || !Array.isArray(entry.genres)) return '';
+            return entry.genres
+                .map(genre => typeof genre === 'string' ? genre : genre.name)
+                .filter(name => name)
+                .join(', ');
+        }
+
+        // Helper function to check if entry has genre
+        function entryHasGenre(entry, targetGenre) {
+            if (!entry.genres || !Array.isArray(entry.genres)) return false;
+            return entry.genres.some(genre => {
+                const genreName = typeof genre === 'string' ? genre : genre.name;
+                return genreName === targetGenre;
+            });
+        }
+
         function displayEntries(entries) {
             const entriesList = document.getElementById('entries-list');
             entriesList.innerHTML = '';
@@ -115,7 +145,7 @@
                 entries.forEach(entry => {
                     let matched = false;
                     for (const genre of selectedGenres) {
-                        if (entry.genres.includes(genre)) {
+                        if (entryHasGenre(entry, genre)) {
                             genreGroups[genre].push(entry);
                             matched = true;
                             break;
@@ -135,7 +165,7 @@
                             const div = document.createElement('div');
                             div.className = 'actualpost';
                             div.innerHTML = `
-                                <div class="actualposttitle"><strong>${entry.title}</strong> - ${entry.genres.join(', ')}</div>
+                                <div class="actualposttitle"><strong>${entry.title}</strong> - ${getGenreNames(entry)}</div>
                             `;
                             entriesList.appendChild(div);
                         });
@@ -152,7 +182,7 @@
                         const div = document.createElement('div');
                         div.className = 'actualpost';
                         div.innerHTML = `
-                            <div class="actualposttitle"><strong>${entry.title}</strong> - ${entry.genres.join(', ')}</div>
+                            <div class="actualposttitle"><strong>${entry.title}</strong> - ${getGenreNames(entry)}</div>
                         `;
                         entriesList.appendChild(div);
                     });
@@ -164,7 +194,7 @@
                     const div = document.createElement('div');
                     div.className = 'actualpost';
                     div.innerHTML = `
-                        <div class="actualposttitle"><strong>${entry.title}</strong> - ${entry.genres.join(', ')}</div>
+                        <div class="actualposttitle"><strong>${entry.title}</strong> - ${getGenreNames(entry)}</div>
                     `;
                     entriesList.appendChild(div);
                 });

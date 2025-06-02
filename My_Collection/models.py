@@ -54,7 +54,7 @@ class Collection(db.Model):
             'user_id': self.user_id,
             'collection_title': self.collection_title,
             'collection_type': self.collection_type,
-            'entries': [self._serialize_entry(entry) for entry in self.entries]
+            # 'entries': [self._serialize_entry(entry) for entry in self.entries]
         }
 
     def _serialize_entry(self, entry):
@@ -64,8 +64,8 @@ class Collection(db.Model):
             'user_id': entry.user_id,
             'collection_id': entry.collection_id,
             'type': entry.type,
-            'genres': [genre.name for genre in entry.genres]
-            }
+            'genres': [{'id': genre.id, 'name': genre.name} for genre in entry.genres]
+        }
         if isinstance(entry, Media):
             entry_dict.update({
                 'title': entry.title,
@@ -92,6 +92,12 @@ class Genre(db.Model):
     def __repr__(self):
         return f'<Genre {self.name}>'
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name
+        }
+
 # Association Table for Many-to-Many Relationship between Entry and Genre
 entry_genres = db.Table('entry_genres',
     db.Column('entry_id', db.Integer, db.ForeignKey('entry.id'), primary_key=True),
@@ -108,7 +114,7 @@ class Entry(db.Model):
     overview = db.Column(db.String(600))
     upc = db.Column(db.String(20), unique=True, nullable=True)
     poster = db.Column(db.String(255))
-    genres = db.relationship('Genre', secondary='entry_genres', lazy='dynamic', overlaps="entries")
+    genres = db.relationship('Genre', secondary='entry_genres', overlaps="entries")
 
     __mapper_args__ = {
         'polymorphic_identity': 'entry',
@@ -125,7 +131,7 @@ class Entry(db.Model):
             'overview': self.overview,
             'upc': self.upc,
             'poster': self.poster,
-            'genres': [genre.name for genre in self.genres]
+            'genres': [{'id': genre.id, 'name': genre.name} for genre in self.genres]
         }
 
 

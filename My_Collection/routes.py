@@ -4,7 +4,7 @@ import requests
 from flask import request, jsonify, send_from_directory, render_template
 from models import db, User, Collection, Entry, Media, Genre, Videogame
 from tmdb_api import search_movie, get_movie_details, get_imdb_link_from_movie_id
-from sqlalchemy.orm import aliased
+from sqlalchemy.orm import joinedload, aliased
 from sqlalchemy.sql import func
 
 
@@ -91,18 +91,10 @@ def init_routes(app):
 
     @app.route('/entries/<int:entry_id>', methods=['GET'])
     def get_entry(entry_id):
-        # Try Media first
-        entry = Media.query.get(entry_id)
-        if entry:
-            return jsonify(entry.to_dict())
+        from sqlalchemy.orm import joinedload
 
-        # Then try Videogame
-        entry = Videogame.query.get(entry_id)
-        if entry:
-            return jsonify(entry.to_dict())
-
-        # Then try generic Entry
-        entry = Entry.query.get(entry_id)
+        # Single query that works for all entry types due to polymorphic inheritance
+        entry = Entry.query.options(joinedload(Entry.genres)).filter_by(id=entry_id).first()
         if entry:
             return jsonify(entry.to_dict())
 
@@ -162,6 +154,8 @@ def init_routes(app):
 
     @app.route('/collections/<int:collection_id>/sort')
     def sort_collection(collection_id):
+        from sqlalchemy.orm import joinedload
+
         sort_by = request.args.get('sort', 'alpha')
 
         collection = Collection.query.get_or_404(collection_id)
@@ -169,7 +163,7 @@ def init_routes(app):
 
         # Determine the appropriate model
         if entry_type == 'media':
-            query = db.session.query(Media).filter_by(collection_id=collection.id)
+            query = db.session.query(Media).options(joinedload(Media.genres)).filter_by(collection_id=collection.id)
 
             if sort_by == 'genre':
                 genre_alias = aliased(Genre)
@@ -181,10 +175,12 @@ def init_routes(app):
             entries = query.all()
 
         elif entry_type == 'videogames':
-            entries = Videogame.query.filter_by(collection_id=collection.id).order_by(Videogame.title.asc()).all()
+            entries = Videogame.query.options(joinedload(Videogame.genres)).filter_by(
+                collection_id=collection.id).order_by(Videogame.title.asc()).all()
 
         else:
-            entries = Entry.query.filter_by(collection_id=collection.id).order_by(Entry.title.asc()).all()
+            entries = Entry.query.options(joinedload(Entry.genres)).filter_by(collection_id=collection.id).order_by(
+                Entry.title.asc()).all()
 
         # Annotate entries with type for frontend
         annotated_entries = [{**entry.to_dict(), 'type': entry_type} for entry in entries]
@@ -498,6 +494,8 @@ def init_routes(app):
 
     @app.route('/collections/<int:collection_id>/entries')
     def get_collection_entries(collection_id):
+        from sqlalchemy.orm import joinedload
+
         sort = request.args.get('sort', 'alpha')  # default to alphabetical
 
         collection = Collection.query.get_or_404(collection_id)
@@ -505,7 +503,7 @@ def init_routes(app):
         genre_alias = aliased(Genre)
 
         if entry_type == 'media':
-            query = db.session.query(Media).filter_by(collection_id=collection.id)
+            query = db.session.query(Media).options(joinedload(Media.genres)).filter_by(collection_id=collection.id)
 
             if sort == 'genre':
                 query = query.outerjoin(Media.genres.of_type(genre_alias))
@@ -516,11 +514,12 @@ def init_routes(app):
             entries = query.all()
 
         elif entry_type == 'videogames':
-            entries = Videogame.query.filter_by(collection_id=collection.id).order_by(
+            entries = Videogame.query.options(joinedload(Videogame.genres)).filter_by(
+                collection_id=collection.id).order_by(
                 Videogame.title.asc()).all()
 
         else:  # default to general entries
-            entries = Entry.query.filter_by(collection_id=collection.id).order_by(
+            entries = Entry.query.options(joinedload(Entry.genres)).filter_by(collection_id=collection.id).order_by(
                 Entry.title.asc()).all()
 
         return jsonify([entry.to_dict() for entry in entries])
@@ -561,6 +560,8 @@ def init_routes(app):
 
     @app.route('/collections/<int:collection_id>/sort', methods=['GET'])
     def sort_collection_entries(collection_id):
+        from sqlalchemy.orm import joinedload
+
         sort_by = request.args.get('sort_by', 'alphabetical')
         collection = Collection.query.get_or_404(collection_id)
         entry_type = collection.collection_type.lower()
@@ -572,20 +573,24 @@ def init_routes(app):
                 genre_alias = aliased(Genre)
                 entries = (
                     db.session.query(Media)
+                    .options(joinedload(Media.genres))
                     .filter(Media.collection_id == collection_id)
                     .outerjoin(Media.genres.of_type(genre_alias))
                     .order_by(func.coalesce(genre_alias.name, ""), Media.title.asc())
                     .all()
                 )
             else:
-                entries = Media.query.filter_by(collection_id=collection_id).order_by(Media.title.asc()).all()
+                entries = Media.query.options(joinedload(Media.genres)).filter_by(collection_id=collection_id).order_by(
+                    Media.title.asc()).all()
 
         elif entry_type == 'videogame':
-            entries = Videogame.query.filter_by(collection_id=collection_id).order_by(Videogame.title.asc()).all()
+            entries = Videogame.query.options(joinedload(Videogame.genres)).filter_by(
+                collection_id=collection_id).order_by(Videogame.title.asc()).all()
 
         else:
             # fallback for generic Entry class if used
-            entries = Entry.query.filter_by(collection_id=collection_id).order_by(Entry.title.asc()).all()
+            entries = Entry.query.options(joinedload(Entry.genres)).filter_by(collection_id=collection_id).order_by(
+                Entry.title.asc()).all()
 
         # Add debug print
         for entry in entries:
@@ -593,3 +598,8 @@ def init_routes(app):
 
         annotated_entries = [{**entry.to_dict(), 'type': entry_type} for entry in entries]
         return jsonify(annotated_entries)
+
+
+
+
+
