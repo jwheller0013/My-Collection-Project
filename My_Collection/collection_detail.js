@@ -60,7 +60,7 @@ function showCollectionEntries(entries) {
         div.appendChild(title);
 
         let viewLink = document.createElement('a');
-        viewLink.href = `/My_collection/entry_detail.html?entry_id=${entry.id}`;
+        viewLink.href = `entry_detail.html?entry_id=${entry.id}`;
         viewLink.textContent = 'View Entry Details';
         div.appendChild(viewLink);
 
@@ -93,8 +93,7 @@ function showCollectionEntries(entries) {
 function updateSortLink(collectionId) {
     const sortLink = document.getElementById('sort-link');
     if (sortLink) {
-        sortLink.href = `/My_collection/sort.html?collectionid=${collectionId}`;
-        sortLink.style.cursor = 'pointer'; // Make it look clickable
+        sortLink.href = `sort.html?collectionid=${collectionId}`;
     }
 }
 
