@@ -228,3 +228,11 @@
     height: 150px; /* Adjust as needed */
     object-fit: cover; /* Maintain aspect ratio and crop if necessary */
 }
+
+.delete-button:hover {
+    background-color: #c82333; /* Slightly darker red */
+}
+.delete-button:active {
+    background-color: #bd212d;
+    transform: translateY(1px); /* Slight press effect */
+}

@@ -66,3 +66,11 @@ body {
     padding-bottom: 60px; /* Adjust this value to be the height of your footer */
 }
 /* to here */
+
+.delete-button:hover {
+    background-color: #c82333; /* Slightly darker red */
+}
+.delete-button:active {
+    background-color: #bd212d;
+    transform: translateY(1px); /* Slight press effect */
+}

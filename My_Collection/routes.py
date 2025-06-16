@@ -206,6 +206,18 @@ def init_routes(app):
 
         return jsonify({"msg": "Collection created successfully", "collection_id": new_collection.id}), 201
 
+    @app.route('/collections/<int:collection_id>', methods=['DELETE'])
+    def delete_collection(collection_id):
+
+        collection = Collection.query.get_or_404(collection_id)
+
+        # Before deleting the collection, delete all associated entries
+        Entry.query.filter_by(collection_id=collection.id).delete()
+
+        db.session.delete(collection)
+        db.session.commit()
+        return jsonify({"msg": "Collection and its entries deleted successfully"}), 204
+
     @app.route('/entries', methods=['POST'])
     def create_entry():
         data = request.get_json()
