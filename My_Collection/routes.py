@@ -6,6 +6,7 @@ from models import db, User, Collection, Entry, Media, Genre, Videogame
 from tmdb_api import search_movie, get_movie_details, get_imdb_link_from_movie_id
 from sqlalchemy.orm import joinedload, aliased
 from sqlalchemy.sql import func
+import os
 
 
 def init_routes(app):
@@ -18,7 +19,27 @@ def init_routes(app):
     #     is_authenticated = False  # Replace with auth check eventually
     #     return jsonify({'isAuthenticated': is_authenticated})
 
+    @app.route('/')
+    def index():
+        # Serve index.html from parent directory
+        return send_from_directory('..', 'index.html')
 
+    @app.route('/<path:filename>')
+    def serve_static_files(filename):
+        import os
+
+        # First check if file exists in parent directory (root)
+        parent_file = os.path.join('..', filename)
+        if os.path.exists(parent_file) and os.path.isfile(parent_file):
+            return send_from_directory('..', filename)
+
+        # Then check current directory (My_Collection)
+        current_file = os.path.join('.', filename)
+        if os.path.exists(current_file) and os.path.isfile(current_file):
+            return send_from_directory('.', filename)
+
+        # File not found
+        return "File not found", 404
 
     @app.route('/api/home')
     def get_home_data():

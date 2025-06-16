@@ -28,7 +28,7 @@ def create_app():
 
     # CORS(app, resources={r"/*": {"origins": "*"}})
     # Or, for more specific origins during development (e.g., your frontend on port 9000):
-    CORS(app, resources={r"/*": {"origins": "http://localhost:9000"}})
+    CORS(app, resources={r"/*": {"origins": ["http://localhost:8080", "http://localhost:9000"]}})
 
     # Create database if it doesn't exist
     if not path.exists('database.db'):
