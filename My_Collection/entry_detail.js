@@ -101,6 +101,15 @@ function showEntryDetails(entry) {
         if (!isVisible) renderEditForm(entry);
     });
 
+    let deleteButton = document.createElement('button');
+    deleteButton.textContent = 'Delete Entry';
+    deleteButton.classList.add('delete-button');
+    deleteButton.addEventListener('click', () => {
+        if (confirm('Are you sure you want to delete this entry? This action cannot be undone.')) {
+            deleteEntry(entry.id, entry.collection_id);
+        }
+    });
+
     let editSection = document.createElement('div');
     editSection.id = 'entry-edit-section';
     editSection.style.display = 'none';
@@ -114,6 +123,7 @@ function showEntryDetails(entry) {
     container.appendChild(imdbLink);
     container.appendChild(genreLabel);
     container.appendChild(editButton);
+    container.appendChild(deleteButton);
     container.appendChild(editSection);
 }
 
@@ -211,6 +221,30 @@ function saveAllChanges() {
         alert("Error while updating entry.");
         console.error(err);
     });
+}
+
+async function deleteEntry(entryIdToDelete, collectionId) {
+    try {
+        const response = await fetch(`${API_URL}/entries/${entryIdToDelete}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            alert('Entry deleted successfully!');
+            // Redirect back to the collection detail page after successful deletion
+            window.location.href = `/My_Collection/collection_detail.html?collectionid=${collectionId}`;
+        } else {
+            const errorData = await response.json();
+            alert(`Failed to delete entry: ${errorData.msg || response.statusText}`);
+            console.error('Delete failed:', errorData);
+        }
+    } catch (error) {
+        alert('An error occurred while deleting the entry.');
+        console.error('Network error during delete:', error);
+    }
 }
 
 function handlePage() {

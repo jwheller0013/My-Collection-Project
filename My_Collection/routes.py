@@ -100,16 +100,6 @@ def init_routes(app):
 
         return jsonify({"msg": "Entry not found"}), 404
 
-    # @app.route('/entries', methods=['GET'])
-    # def get_entries():
-    #     entries = Media.query.all()
-    #     return jsonify([entry.to_dict() for entry in entries])
-    #
-    # @app.route('/entries/<int:entry_id>', methods=['GET'])
-    # def get_entry(entry_id):
-    #     entry = Media.query.get_or_404(entry_id)
-    #     return jsonify(entry.to_dict())
-
     @app.route('/genres', methods=['GET'])
     def get_genres():
         genres = Genre.query.all()
@@ -306,6 +296,14 @@ def init_routes(app):
         db.session.add(new_entry)
         db.session.commit()
         return jsonify({"msg": "Entry created successfully", "entry_id": new_entry.id}), 201
+
+    @app.route('/entries/<int:entry_id>', methods=['DELETE'])
+    def delete_entry(entry_id):
+
+        entry = Entry.query.get_or_404(entry_id)
+        db.session.delete(entry)
+        db.session.commit()
+        return jsonify({"msg": "Entry deleted successfully"}), 204
 
     # API TMDB
     @app.route('/api/tmdb_import', methods=['POST'])
