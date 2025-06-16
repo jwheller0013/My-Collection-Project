@@ -93,7 +93,8 @@ function showCollectionEntries(entries) {
 function updateSortLink(collectionId) {
     const sortLink = document.getElementById('sort-link');
     if (sortLink) {
-        sortLink.href = `/My_collection/sort.html?collectionid=${collectionId}`; //check if collection_id
+        sortLink.href = `/My_collection/sort.html?collectionid=${collectionId}`;
+        sortLink.style.cursor = 'pointer'; // Make it look clickable
     }
 }
 
