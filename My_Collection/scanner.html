@@ -49,6 +49,11 @@
             color: white;
         }
 
+        .focus-button {
+            background-color: #ff9800;
+            color: white;
+        }
+
         #barcode-result {
             margin: 10px 0;
             padding: 10px;
@@ -67,11 +72,40 @@
             padding-top: 20px;
             border-top: 2px solid #ccc;
         }
+
+        .scanning-tips {
+            background-color: #f0f8ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #2196F3;
+        }
+
+        .scanning-tips h3 {
+            margin-top: 0;
+            color: #2196F3;
+        }
+
+        .scanning-tips ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
     </style>
 </head>
 
 <body>
     <h1>Please Scan or Enter UPC</h1>
+
+    <div class="scanning-tips">
+        <h3>📱 Mobile Scanning Tips:</h3>
+        <ul>
+            <li>Hold device 6-8 inches away from barcode</li>
+            <li>Ensure good lighting</li>
+            <li>Tap screen to focus if blurry</li>
+            <li>Keep device steady</li>
+            <li>Try the manual focus button if available</li>
+        </ul>
+    </div>
 
     <h2>Camera Scanner</h2>
     <div class="camera-container">
@@ -82,6 +116,7 @@
             <button id="start-camera" class="start-camera">Start Camera</button>
             <button id="stop-camera" class="stop-camera hidden">Stop Camera</button>
             <button id="capture-frame" class="capture-frame hidden">Capture Barcode</button>
+            <button id="manual-focus" class="focus-button hidden">Manual Focus</button>
         </div>
 
         <div id="barcode-result">
@@ -118,11 +153,13 @@
     <script>
         let currentStream = null;
         let isScanning = false;
+        let videoTrack = null;
 
         // Camera controls
         const startCameraBtn = document.getElementById('start-camera');
         const stopCameraBtn = document.getElementById('stop-camera');
         const captureFrameBtn = document.getElementById('capture-frame');
+        const manualFocusBtn = document.getElementById('manual-focus');
         const video = document.getElementById('camera-video');
         const canvas = document.getElementById('camera-canvas');
         const cameraStatus = document.getElementById('camera-status');
@@ -130,18 +167,44 @@
         const detectedBarcode = document.getElementById('detected-barcode');
         const useDetectedBtn = document.getElementById('use-detected-barcode');
 
-        // Start camera
+        // Start camera with improved focus settings
         startCameraBtn.addEventListener('click', async function() {
             try {
                 cameraStatus.innerHTML = '<p>Starting camera...</p>';
 
-                currentStream = await navigator.mediaDevices.getUserMedia({
+                // Enhanced camera constraints for better focus
+                const constraints = {
                     video: {
-                        facingMode: 'environment', // Use back camera if available
-                        width: { ideal: 640 },
-                        height: { ideal: 480 }
+                        facingMode: 'environment', // Use back camera
+                        width: { ideal: 1280, min: 640 },
+                        height: { ideal: 720, min: 480 },
+                        // Advanced focus settings
+                        focusMode: 'continuous',
+                        focusDistance: { ideal: 0.1 }, // Close focus for barcodes
+                        // Additional constraints that might help
+                        aspectRatio: { ideal: 16/9 },
+                        frameRate: { ideal: 30, min: 15 }
                     }
-                });
+                };
+
+                currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+                videoTrack = currentStream.getVideoTracks()[0];
+
+                // Apply additional settings if supported
+                if (videoTrack && videoTrack.applyConstraints) {
+                    try {
+                        await videoTrack.applyConstraints({
+                            advanced: [
+                                { focusMode: 'continuous' },
+                                { focusDistance: 0.1 },
+                                { exposureMode: 'continuous' },
+                                { whiteBalanceMode: 'continuous' }
+                            ]
+                        });
+                    } catch (constraintError) {
+                        console.log('Advanced constraints not supported:', constraintError);
+                    }
+                }
 
                 video.srcObject = currentStream;
                 video.classList.remove('hidden');
@@ -150,16 +213,85 @@
                 stopCameraBtn.classList.remove('hidden');
                 captureFrameBtn.classList.remove('hidden');
 
-                cameraStatus.innerHTML = '<p>Camera active. Point at a barcode and click "Capture Barcode"</p>';
+                // Show manual focus button if supported
+                if (videoTrack && videoTrack.getCapabilities && videoTrack.getCapabilities().focusDistance) {
+                    manualFocusBtn.classList.remove('hidden');
+                }
 
-                // Start continuous scanning
-                startBarcodeScanning();
+                cameraStatus.innerHTML = '<p>Camera active. Point at barcode 6-8 inches away. Tap video to focus.</p>';
+
+                // Add tap-to-focus functionality
+                video.addEventListener('click', handleTapToFocus);
+                video.addEventListener('touchstart', handleTapToFocus);
+
+                // Start continuous scanning with delay to allow camera to stabilize
+                setTimeout(() => {
+                    startBarcodeScanning();
+                }, 1000);
 
             } catch (err) {
                 console.error('Error accessing camera:', err);
-                cameraStatus.innerHTML = '<p style="color: red;">Error accessing camera. Please check permissions.</p>';
+                cameraStatus.innerHTML = '<p style="color: red;">Error accessing camera. Please check permissions and try manual entry.</p>';
             }
         });
+
+        // Manual focus button
+        manualFocusBtn.addEventListener('click', async function() {
+            if (videoTrack && videoTrack.applyConstraints) {
+                try {
+                    // Cycle through different focus distances
+                    const focusDistances = [0.05, 0.1, 0.2, 0.3];
+                    const currentTime = Date.now();
+                    const focusIndex = Math.floor(currentTime / 2000) % focusDistances.length;
+
+                    await videoTrack.applyConstraints({
+                        advanced: [{ focusDistance: focusDistances[focusIndex] }]
+                    });
+
+                    cameraStatus.innerHTML = `<p>Focus adjusted to ${focusDistances[focusIndex]}m. Try scanning now.</p>`;
+                } catch (err) {
+                    console.log('Manual focus not supported:', err);
+                    cameraStatus.innerHTML = '<p>Manual focus not supported on this device.</p>';
+                }
+            }
+        });
+
+        // Tap to focus functionality
+        async function handleTapToFocus(event) {
+            event.preventDefault();
+
+            if (videoTrack && videoTrack.applyConstraints) {
+                try {
+                    // Reset to continuous autofocus
+                    await videoTrack.applyConstraints({
+                        advanced: [
+                            { focusMode: 'single-shot' },
+                            { focusDistance: 0.1 }
+                        ]
+                    });
+
+                    // Then back to continuous
+                    setTimeout(async () => {
+                        try {
+                            await videoTrack.applyConstraints({
+                                advanced: [{ focusMode: 'continuous' }]
+                            });
+                        } catch (e) {
+                            console.log('Continuous focus not supported');
+                        }
+                    }, 500);
+
+                    cameraStatus.innerHTML = '<p style="color: green;">📸 Refocusing... Hold steady!</p>';
+
+                    setTimeout(() => {
+                        cameraStatus.innerHTML = '<p>Camera active. Point at barcode 6-8 inches away.</p>';
+                    }, 2000);
+
+                } catch (err) {
+                    console.log('Tap to focus not supported:', err);
+                }
+            }
+        }
 
         // Stop camera
         stopCameraBtn.addEventListener('click', function() {
@@ -170,6 +302,7 @@
             if (currentStream) {
                 currentStream.getTracks().forEach(track => track.stop());
                 currentStream = null;
+                videoTrack = null;
             }
 
             if (isScanning) {
@@ -181,7 +314,12 @@
             startCameraBtn.classList.remove('hidden');
             stopCameraBtn.classList.add('hidden');
             captureFrameBtn.classList.add('hidden');
+            manualFocusBtn.classList.add('hidden');
             barcodeResult.style.display = 'none';
+
+            // Remove event listeners
+            video.removeEventListener('click', handleTapToFocus);
+            video.removeEventListener('touchstart', handleTapToFocus);
 
             cameraStatus.innerHTML = '<p>Camera stopped. Click "Start Camera" to begin scanning.</p>';
         }
@@ -200,8 +338,6 @@
             context.drawImage(video, 0, 0);
 
             cameraStatus.innerHTML = '<p>Frame captured. Processing...</p>';
-
-            // Process the captured frame for barcodes
             processCapturedFrame();
         }
 
@@ -214,30 +350,36 @@
                     type: "LiveStream",
                     target: video,
                     constraints: {
-                        width: 640,
-                        height: 480,
+                        width: { min: 640, ideal: 1280 },
+                        height: { min: 480, ideal: 720 },
                         facingMode: "environment"
                     }
                 },
+                locator: {
+                    patchSize: "medium",
+                    halfSample: true
+                },
+                numOfWorkers: 2,
                 decoder: {
                     readers: [
                         "code_128_reader",
                         "ean_reader",
                         "ean_8_reader",
                         "code_39_reader",
-                        "code_39_vin_reader",
-                        "codabar_reader",
                         "upc_reader",
                         "upc_e_reader"
                     ]
-                }
+                },
+                locate: true
             }, function(err) {
                 if (err) {
                     console.error('QuaggaJS initialization error:', err);
+                    cameraStatus.innerHTML = '<p style="color: orange;">Barcode scanner initialization failed. Use manual entry.</p>';
                     return;
                 }
                 Quagga.start();
                 isScanning = true;
+                console.log('Barcode scanning started');
             });
 
             // Listen for barcode detection
@@ -252,14 +394,16 @@
                 // Auto-fill the manual input field
                 document.getElementById('upc').value = code;
 
-                cameraStatus.innerHTML = '<p style="color: green;">Barcode detected! You can use it or continue scanning.</p>';
+                cameraStatus.innerHTML = '<p style="color: green;">✅ Barcode detected! You can use it or continue scanning.</p>';
+
+                // Optional: Auto-submit after successful scan
+                // Uncomment the next line if you want automatic submission
+                // setTimeout(() => processUPC(code), 1000);
             });
         }
 
         function processCapturedFrame() {
-            // This is a fallback method for single frame capture
-            // The continuous scanning above is more effective
-            cameraStatus.innerHTML = '<p>Use continuous scanning for better results, or try capturing another frame.</p>';
+            cameraStatus.innerHTML = '<p>Single frame processed. Continuous scanning works better for mobile.</p>';
         }
 
         // Use detected barcode
@@ -291,7 +435,7 @@
             })
             .then(res => res.json())
             .then(data => {
-                let redirectUrl = `/My_collection/scanner_results.html?upc=${encodeURIComponent(upc)}`;
+                let redirectUrl = `scanner_results.html?upc=${encodeURIComponent(upc)}`;
                 if (data.title) {
                     redirectUrl += `&title=${encodeURIComponent(data.title)}`;
                 }
@@ -299,13 +443,37 @@
             })
             .catch(err => {
                 console.error('Error during UPC lookup:', err);
-                window.location.href = `/My_collection/scanner_results.html?upc=${encodeURIComponent(upc)}`;
+                window.location.href = `scanner_results.html?upc=${encodeURIComponent(upc)}`;
             });
         }
 
         // Cleanup when page is unloaded
         window.addEventListener('beforeunload', function() {
             stopCamera();
+        });
+
+        // Prevent screen from sleeping during scanning
+        let wakeLock = null;
+
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Screen wake lock active');
+                }
+            } catch (err) {
+                console.log('Wake lock not supported:', err);
+            }
+        }
+
+        // Request wake lock when camera starts
+        startCameraBtn.addEventListener('click', requestWakeLock);
+
+        // Release wake lock when camera stops
+        window.addEventListener('beforeunload', function() {
+            if (wakeLock) {
+                wakeLock.release();
+            }
         });
     </script>
 </body>
