@@ -191,13 +191,36 @@ def init_routes(app):
 
     @app.route('/api/random_entry')
     def get_random_entry():
-        user_id = 1 #placeholder will need to add a means to check userid
-        user_entries = Media.query.filter_by(user_id=user_id).all() # Only Media currently
-        if user_entries:
-            random_entry = random.choice(user_entries)
+        user_id = 1  # placeholder will need to add a means to check userid
+        random_entry = Entry.query.filter_by(user_id=user_id).order_by(func.random()).first()
+        if random_entry:
             return jsonify({'entry_id': random_entry.id})
         else:
             return jsonify({'error': 'No entries found for this user'}), 404
+
+    @app.route('/api/random_entry_from_collection', methods=['GET'])
+    def get_random_entry_from_collection():
+        collection_id = request.args.get('collection_id')  # Get collection_id from query parameters
+        user_id = 1  # Placeholder for current user
+
+        if not collection_id:
+            return jsonify({"error": "Collection ID is required"}), 400
+
+        try:
+            collection_id = int(collection_id)
+        except ValueError:
+            return jsonify({"error": "Invalid Collection ID"}), 400
+
+        # Query for a random entry specifically within that collection
+        random_entry = Entry.query.filter_by(
+            collection_id=collection_id,
+            user_id=user_id  # Filter by user_id even if filtering by collection_id
+        ).order_by(func.random()).first()
+
+        if random_entry:
+            return jsonify({"entry_id": random_entry.id}), 200
+        else:
+            return jsonify({"error": "No entries found in this collection"}), 404
 
     @app.route('/scanner.html')
     def scanner_page():

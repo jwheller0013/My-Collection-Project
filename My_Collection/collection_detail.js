@@ -17,7 +17,7 @@ function fetchCollectionDetails(collectionId) {
         })
         .then(data => {
             showCollectionEntries(data);
-            fetchCollectionTitle(collectionId); // Fetch and display the collection title
+            fetchCollectionTitle(collectionId);
         })
         .catch(error => {
             console.error(`Error fetching collection entries: ${error}`);
@@ -42,10 +42,17 @@ function fetchCollectionTitle(collectionId) {
 
 function showCollectionEntries(entries) {
     const entriesListDiv = document.getElementById(ENTRIES_LIST_ID);
+    entriesListDiv.innerHTML = '';
     const list = document.createDocumentFragment();
+
+    if (entries.length === 0) {
+        entriesListDiv.innerHTML = '<p>No entries found in this collection.</p>';
+        return;
+    }
 
     entries.map(function (entry) {
         let div = document.createElement('div');
+        div.classList.add('entry-item');
 
         if (entry.poster) {
             let posterImg = document.createElement('img');
@@ -64,7 +71,7 @@ function showCollectionEntries(entries) {
         viewLink.textContent = 'View Entry Details';
         div.appendChild(viewLink);
 
-        if (entry.type === 'media') {
+        if (entry.type === 'media' || typeof entry.rating !== 'undefined' || typeof entry.link !== 'undefined') {
             let details = document.createElement('p');
             details.textContent = `Rating: ${entry.rating || 'N/A'}`;
             div.appendChild(details);
@@ -74,15 +81,14 @@ function showCollectionEntries(entries) {
             imdbLink.textContent = 'IMDb Link';
             imdbLink.target = '_blank';
             div.appendChild(imdbLink);
-
-            let genres = document.createElement('p');
-            // Fix: Extract genre names from the array of genre objects
-            const genreNames = entry.genres && entry.genres.length > 0
-                ? entry.genres.map(genre => genre.name).join(', ')
-                : 'N/A';
-            genres.textContent = `Genres: ${genreNames}`;
-            div.appendChild(genres);
         }
+
+        let genres = document.createElement('p');
+        const genreNames = entry.genres && Array.isArray(entry.genres) && entry.genres.length > 0
+            ? entry.genres.map(genre => genre.name).join(', ')
+            : 'N/A';
+        genres.textContent = `Genres: ${genreNames}`;
+        div.appendChild(genres);
 
         list.appendChild(div);
     });
@@ -97,11 +103,51 @@ function updateSortLink(collectionId) {
     }
 }
 
+// Handler for the NEW "Random Entry from this Collection" link (header button)
+const handleRandomCollectionEntryClick = (event) => {
+    event.preventDefault(); // Stop the default '#' behavior
+    const collectionId = getCollectionIdFromUrl();
+
+    if (!collectionId) {
+        alert('Could not determine collection ID for random entry in this collection.');
+        return;
+    }
+
+    fetch(`${API_URL}/api/random_entry_from_collection?collection_id=${collectionId}`)
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.error || 'Failed to get random entry ID from collection');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data && data.entry_id) {
+                window.location.href = `/My_Collection/entry_detail.html?entry_id=${data.entry_id}`;
+            } else {
+                alert(data.error || 'No entries found in this collection for a random pick.');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching random entry from collection:', error);
+            alert(error.message);
+        });
+};
+
+
 function handlePage() {
     const collectionId = getCollectionIdFromUrl();
     if (collectionId) {
         fetchCollectionDetails(collectionId);
         updateSortLink(collectionId);
+
+        // Attach event listener for the NEW "Random Entry from this Collection" button
+        const randomCollectionEntryLink = document.getElementById('random-collection-entry-link');
+        if (randomCollectionEntryLink) {
+            randomCollectionEntryLink.addEventListener('click', handleRandomCollectionEntryClick);
+        }
+
     } else {
         document.getElementById(ENTRIES_LIST_ID).textContent = 'Invalid Collection ID';
     }
