@@ -14,11 +14,6 @@ def init_routes(app):
     def hi():
         return "Hello, World!"
 
-    # @app.route('/api/home')
-    # def get_home_data():
-    #     is_authenticated = False  # Replace with auth check eventually
-    #     return jsonify({'isAuthenticated': is_authenticated})
-
     @app.route('/')
     def index():
         # Serve index.html from parent directory
@@ -110,16 +105,67 @@ def init_routes(app):
         # Return them as JSON
         return jsonify([entry.to_dict() for entry in all_entries])
 
-    @app.route('/entries/<int:entry_id>', methods=['GET'])
-    def get_entry(entry_id):
+    @app.route('/entries/<int:entry_id>', methods=['GET', 'PUT', 'DELETE'])
+    def entry_detail(entry_id):
         from sqlalchemy.orm import joinedload
 
-        # Single query that works for all entry types due to polymorphic inheritance
         entry = Entry.query.options(joinedload(Entry.genres)).filter_by(id=entry_id).first()
-        if entry:
+        if not entry:
+            return jsonify({"msg": "Entry not found"}), 404
+
+        if request.method == 'GET':
             return jsonify(entry.to_dict())
 
-        return jsonify({"msg": "Entry not found"}), 404
+        elif request.method == 'PUT':
+            data = request.get_json()
+
+            # Update common fields
+            entry.title = data.get('title', entry.title)
+            entry.overview = data.get('overview', entry.overview)
+            entry.poster = data.get('poster', entry.poster)
+
+            # Handle genres
+            if 'genres' in data:
+                new_genre_ids = set(data['genres'])
+                current_genre_ids = {genre.id for genre in entry.genres}
+
+                # Remove genres no longer selected
+                for genre in list(entry.genres): # Iterate over a copy to modify
+                    if genre.id not in new_genre_ids:
+                        entry.genres.remove(genre)
+
+                # Add newly selected genres
+                for genre_id in new_genre_ids:
+                    if genre_id not in current_genre_ids:
+                        genre = Genre.query.get(genre_id)
+                        if genre:
+                            entry.genres.append(genre)
+
+            # Handle type-specific fields
+            if entry.type == 'media' and isinstance(entry, Media):
+                entry.rating = data.get('rating', entry.rating)
+                entry.link = data.get('link', entry.link)
+            # No specific fields to handle for 'videogame' beyond the common ones,
+            # but you could add an elif for 'videogame' if you had unique fields later.
+
+            try:
+                db.session.commit()
+                return jsonify(entry.to_dict()), 200
+            except Exception as e:
+                db.session.rollback()
+                print(f"Error updating entry {entry_id}: {e}") # Debugging
+                return jsonify({"msg": "Failed to update entry", "error": str(e)}), 500
+
+        elif request.method == 'DELETE':
+            try:
+                db.session.delete(entry)
+                db.session.commit()
+                return jsonify({"msg": "Entry deleted successfully"}), 200
+            except Exception as e:
+                db.session.rollback()
+                print(f"Error deleting entry {entry_id}: {e}") # Debugging
+                return jsonify({"msg": "Failed to delete entry", "error": str(e)}), 500
+
 
     @app.route('/genres', methods=['GET'])
     def get_genres():
@@ -136,7 +182,7 @@ def init_routes(app):
         return send_from_directory('.', 'collection_detail.html')
 
     @app.route('/collections/<int:collection_id>/detail')
-    def collection_detail(collection_id):
+    def collection_detail_page(collection_id): # Renamed to avoid conflict with `get_collection`
         return render_template('collection_detail.html', collection_id=collection_id)
 
     @app.route('/entry_detail.html')
@@ -146,7 +192,7 @@ def init_routes(app):
     @app.route('/api/random_entry')
     def get_random_entry():
         user_id = 1 #placeholder will need to add a means to check userid
-        user_entries = Media.query.filter_by(user_id=user_id).all()
+        user_entries = Media.query.filter_by(user_id=user_id).all() # Only Media currently
         if user_entries:
             random_entry = random.choice(user_entries)
             return jsonify({'entry_id': random_entry.id})
@@ -160,8 +206,6 @@ def init_routes(app):
     @app.route('/scanner_results.html')
     def scanner_results_page():
         return send_from_directory('.', 'scanner_results.html')
-
-    from flask import jsonify
 
     @app.route('/collections/<int:collection_id>/sort')
     def sort_collection(collection_id):
@@ -330,13 +374,6 @@ def init_routes(app):
         db.session.commit()
         return jsonify({"msg": "Entry created successfully", "entry_id": new_entry.id}), 201
 
-    @app.route('/entries/<int:entry_id>', methods=['DELETE'])
-    def delete_entry(entry_id):
-
-        entry = Entry.query.get_or_404(entry_id)
-        db.session.delete(entry)
-        db.session.commit()
-        return jsonify({"msg": "Entry deleted successfully"}), 204
 
     # API TMDB
     @app.route('/api/tmdb_import', methods=['POST'])
@@ -629,8 +666,3 @@ def init_routes(app):
 
         annotated_entries = [{**entry.to_dict(), 'type': entry_type} for entry in entries]
         return jsonify(annotated_entries)
-
-
-
-
-

@@ -4,7 +4,7 @@ const ENTRY_DETAIL_CONTAINER_ID = 'entry-detail-container';
 let allGenres = [];
 let currentGenres = [];
 let entryId = null;
-let entryType = null;
+let entryType = null; // Store the entry type
 let entryData = {};
 
 function getEntryIdFromUrl() {
@@ -22,7 +22,6 @@ function fetchAllGenres() {
 }
 
 function fetchEntryDetails(entryId, retries = 3) {
-    // Show loading state immediately
     const container = document.getElementById(ENTRY_DETAIL_CONTAINER_ID);
     if (container) {
         container.innerHTML = 'Loading entry details...';
@@ -35,14 +34,14 @@ function fetchEntryDetails(entryId, retries = 3) {
         })
         .then(data => {
             entryData = data;
-            entryType = data.entryType;
+            entryType = data.type; // Correctly get entry type from 'type' property
             currentGenres = data.genres || [];
             showEntryDetails(data);
         })
         .catch(error => {
             console.error(`Error fetching entry details (attempts left: ${retries}):`, error);
             if (retries > 0) {
-                setTimeout(() => fetchEntryDetails(entryId, retries - 1), 5000); // Retry after 5 seconds
+                setTimeout(() => fetchEntryDetails(entryId, retries - 1), 5000);
             } else {
                 const container = document.getElementById(ENTRY_DETAIL_CONTAINER_ID);
                 if (container) {
@@ -61,35 +60,44 @@ function showEntryDetails(entry) {
 
     container.innerHTML = '';
 
-    // Add "Back to Collection" link
     let backLink = document.createElement('a');
     backLink.href = `/My_Collection/collection_detail.html?collectionid=${entry.collection_id}`;
     backLink.textContent = 'Back to Collection';
     backLink.style.marginBottom = '20px';
     backLink.style.display = 'block';
+    container.appendChild(backLink);
 
     let title = document.createElement('h1');
     title.textContent = entry.title || 'No Title';
+    container.appendChild(title);
 
     let posterImg = document.createElement('img');
     posterImg.src = entry.poster || 'placeholder.jpg';
     posterImg.alt = `${entry.title || 'No Title'} Poster`;
     posterImg.classList.add('entry-poster');
+    container.appendChild(posterImg);
 
-    let rating = document.createElement('p');
-    rating.textContent = `Rating: ${entry.rating || 'N/A'}`;
+    // Conditional rendering for Media-specific fields
+    if (entry.type === 'media') {
+        let rating = document.createElement('p');
+        rating.textContent = `Rating: ${entry.rating || 'N/A'}`;
+        container.appendChild(rating);
+
+        let imdbLink = document.createElement('a');
+        imdbLink.href = entry.link || '#';
+        imdbLink.textContent = 'IMDb Link';
+        imdbLink.target = '_blank';
+        container.appendChild(imdbLink);
+    }
 
     let overview = document.createElement('p');
     overview.textContent = `Overview: ${entry.overview || 'N/A'}`;
-
-    let imdbLink = document.createElement('a');
-    imdbLink.href = entry.link || '#';
-    imdbLink.textContent = 'IMDb Link';
-    imdbLink.target = '_blank';
+    container.appendChild(overview);
 
     let genreLabel = document.createElement('p');
     genreLabel.innerHTML = '<strong>Genres:</strong> <span id="genre-display">' +
         (currentGenres.length ? currentGenres.map(g => g.name).join(', ') : 'None') + '</span>';
+    container.appendChild(genreLabel);
 
     let editButton = document.createElement('button');
     editButton.textContent = 'Edit';
@@ -100,6 +108,7 @@ function showEntryDetails(entry) {
         editButton.textContent = isVisible ? 'Edit' : 'Cancel';
         if (!isVisible) renderEditForm(entry);
     });
+    container.appendChild(editButton);
 
     let deleteButton = document.createElement('button');
     deleteButton.textContent = 'Delete Entry';
@@ -109,21 +118,11 @@ function showEntryDetails(entry) {
             deleteEntry(entry.id, entry.collection_id);
         }
     });
+    container.appendChild(deleteButton);
 
     let editSection = document.createElement('div');
     editSection.id = 'entry-edit-section';
     editSection.style.display = 'none';
-
-    // Append elements in new order
-    container.appendChild(backLink);
-    container.appendChild(title);
-    container.appendChild(posterImg);
-    container.appendChild(rating);
-    container.appendChild(overview);
-    container.appendChild(imdbLink);
-    container.appendChild(genreLabel);
-    container.appendChild(editButton);
-    container.appendChild(deleteButton);
     container.appendChild(editSection);
 }
 
@@ -135,11 +134,17 @@ function renderEditForm(entry) {
 
     const fields = [
         { id: 'edit-title', label: 'Title', value: entry.title || '' },
-        { id: 'edit-rating', label: 'Rating', value: entry.rating || '' },
         { id: 'edit-overview', label: 'Overview', value: entry.overview || '' },
-        { id: 'edit-link', label: 'Link', value: entry.link || '' },
         { id: 'edit-poster', label: 'Poster URL', value: entry.poster || '' }
     ];
+
+    // Add Media-specific fields conditionally
+    if (entry.type === 'media') {
+        fields.push(
+            { id: 'edit-rating', label: 'Rating', value: entry.rating || '' },
+            { id: 'edit-link', label: 'Link', value: entry.link || '' }
+        );
+    }
 
     fields.forEach(field => {
         const label = document.createElement('label');
@@ -194,15 +199,21 @@ function saveAllChanges() {
         document.querySelectorAll('#genre-checkboxes input[type="checkbox"]:checked')
     ).map(cb => parseInt(cb.value));
 
+    // Start with common fields
     const updatedData = {
-        entryType: entryType,
         title: document.getElementById('edit-title').value,
-        rating: document.getElementById('edit-rating').value,
         overview: document.getElementById('edit-overview').value,
-        link: document.getElementById('edit-link').value,
         poster: document.getElementById('edit-poster').value,
-        genres: selectedGenreIds
+        genres: selectedGenreIds,
+        type: entryType // Ensure the type is sent back for polymorphic handling on the backend
     };
+
+    // Add Media-specific fields if the entry is of type 'media'
+    if (entryType === 'media') {
+        updatedData.rating = document.getElementById('edit-rating').value;
+        updatedData.link = document.getElementById('edit-link').value;
+    }
+    // No specific fields needed for 'videogame' beyond the common ones
 
     fetch(`${API_URL}/entries/${entryId}`, {
         method: "PUT",
@@ -234,7 +245,6 @@ async function deleteEntry(entryIdToDelete, collectionId) {
 
         if (response.ok) {
             alert('Entry deleted successfully!');
-            // Redirect back to the collection detail page after successful deletion
             window.location.href = `/My_Collection/collection_detail.html?collectionid=${collectionId}`;
         } else {
             const errorData = await response.json();
@@ -248,9 +258,7 @@ async function deleteEntry(entryIdToDelete, collectionId) {
 }
 
 function handlePage() {
-    console.log('handlePage called'); // Debug log
     entryId = getEntryIdFromUrl();
-    console.log('Entry ID:', entryId); // Debug log
 
     if (!entryId) {
         const container = document.getElementById(ENTRY_DETAIL_CONTAINER_ID);
@@ -261,23 +269,19 @@ function handlePage() {
     }
 
     fetchAllGenres().then(() => {
-        console.log('Genres fetched, now fetching entry details'); // Debug log
         fetchEntryDetails(entryId);
     }).catch(err => {
         console.error('Error fetching genres:', err);
-        fetchEntryDetails(entryId); // Try to fetch entry details anyway
+        fetchEntryDetails(entryId);
     });
 }
 
-// Multiple ways to ensure the script runs
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', handlePage);
 } else {
-    // DOM is already loaded
     handlePage();
 }
 
-// Fallback for when DOM is ready but DOMContentLoaded didn't fire
 window.addEventListener('load', () => {
     if (!entryId) {
         handlePage();
