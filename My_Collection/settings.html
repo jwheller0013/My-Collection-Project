@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Customize Your Experience</title>
+    <style>
+        /* Include your main CSS here or link to it */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #222;
+            max-width: 50rem;
+            padding: 2rem;
+            margin: auto;
+            background: #fafafa;
+            min-height: 100vh;
+        }
+
+        .settings-container {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .setting-group {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .setting-group:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .setting-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #1e60ca;
+        }
+
+        .setting-description {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        input[type="file"],
+        input[type="color"],
+        select,
+        input[type="range"] {
+            width: 100%;
+            max-width: 300px;
+            padding: 0.5rem;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        input[type="range"] {
+            padding: 0;
+        }
+
+        .color-preview {
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            border: 2px solid #ddd;
+            display: inline-block;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        .font-preview {
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin-top: 0.5rem;
+            background: #f9f9f9;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: #1e60ca;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #155aa0;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .bg-preview {
+            width: 100%;
+            height: 200px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            margin-top: 0.5rem;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .settings-container {
+                padding: 1.5rem;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            input[type="file"],
+            input[type="color"],
+            select,
+            input[type="range"] {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="settings-container">
+        <h1>⚙️ Settings</h1>
+        <p>Customize your app's appearance and behavior.</p>
+
+        <!-- Background Settings -->
+        <div class="setting-group">
+            <label class="setting-label">Background Image</label>
+            <div class="setting-description">Upload a custom background image for your app</div>
+            <input type="file" id="bgImage" accept="image/*">
+            <div id="bgPreview" class="bg-preview">No background image selected</div>
+            <button class="btn btn-secondary" id="removeBg" style="margin-top: 0.5rem;">Remove Background</button>
+        </div>
+
+        <!-- Color Scheme -->
+        <div class="setting-group">
+            <label class="setting-label">Color Scheme</label>
+            <div class="setting-description">Customize your app's color palette</div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="textColor">Text Color:</label>
+                <input type="color" id="textColor" value="#222222">
+                <span class="color-preview" id="textColorPreview"></span>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="accentColor">Accent Color:</label>
+                <input type="color" id="accentColor" value="#5eb5f4">
+                <span class="color-preview" id="accentColorPreview"></span>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="headingColor">Heading Color:</label>
+                <input type="color" id="headingColor" value="#1e60ca">
+                <span class="color-preview" id="headingColorPreview"></span>
+            </div>
+        </div>
+
+        <!-- Typography -->
+        <div class="setting-group">
+            <label class="setting-label">Typography</label>
+            <div class="setting-description">Adjust font settings for better readability</div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="fontFamily">Font Family:</label>
+                <select id="fontFamily">
+                    <option value="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">System Default</option>
+                    <option value="Georgia, 'Times New Roman', serif">Georgia (Serif)</option>
+                    <option value="'Courier New', Courier, monospace">Courier New (Monospace)</option>
+                    <option value="Arial, Helvetica, sans-serif">Arial</option>
+                    <option value="'Trebuchet MS', Helvetica, sans-serif">Trebuchet MS</option>
+                    <option value="Verdana, Geneva, sans-serif">Verdana</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="fontSize">Font Size: <span id="fontSizeValue">16px</span></label>
+                <input type="range" id="fontSize" min="12" max="24" value="16">
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="textOutline">Text Outline (for background images):</label>
+                <select id="textOutline">
+                    <option value="none">No Outline</option>
+                    <option value="light">Black Outline (for light text)</option>
+                    <option value="dark">White Outline (for dark text)</option>
+                    <option value="heavy">Heavy Black Outline</option>
+                </select>
+                <div class="setting-description">Text outlines help readability over background images</div>
+            </div>
+
+            <div class="font-preview" id="fontPreview">
+                <h2>Sample Heading</h2>
+                <p>This is a sample paragraph to preview your font settings. The quick brown fox jumps over the lazy dog.</p>
+                <p><strong>Bold text example</strong> and <a href="#">link example</a></p>
+            </div>
+        </div>
+
+        <!-- Layout Settings -->
+        <div class="setting-group">
+            <label class="setting-label">Layout</label>
+            <div class="setting-description">Adjust layout and spacing preferences</div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="maxWidth">Content Width: <span id="maxWidthValue">50rem</span></label>
+                <input type="range" id="maxWidth" min="30" max="70" value="50">
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="padding">Padding: <span id="paddingValue">2rem</span></label>
+                <input type="range" id="padding" min="1" max="4" step="0.5" value="2">
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button class="btn btn-primary" id="saveSettings">Save Settings</button>
+            <button class="btn btn-secondary" id="previewSettings">Preview Changes</button>
+            <button class="btn btn-danger" id="resetSettings">Reset to Default</button>
+        </div>
+    </div>
+
+    <script>
+        // Settings management
+        class SettingsManager {
+            constructor() {
+                this.settings = this.loadSettings();
+                this.initializeUI();
+                this.attachEventListeners();
+                this.updatePreviews();
+            }
+
+            loadSettings() {
+                const saved = JSON.parse(localStorage.getItem('appSettings') || '{}');
+                return {
+                    bgImage: saved.bgImage || '',
+                    textColor: saved.textColor || '#222222',
+                    accentColor: saved.accentColor || '#5eb5f4',
+                    headingColor: saved.headingColor || '#1e60ca',
+                    fontFamily: saved.fontFamily || '-apple-system, BlinkMacSystemFont, \'Segoe UI\', Helvetica, Arial, sans-serif',
+                    fontSize: saved.fontSize || 16,
+                    textOutline: saved.textOutline || 'none',
+                    maxWidth: saved.maxWidth || 50,
+                    padding: saved.padding || 2
+                };
+            }
+
+            saveSettings() {
+                localStorage.setItem('appSettings', JSON.stringify(this.settings));
+            }
+
+            initializeUI() {
+                document.getElementById('textColor').value = this.settings.textColor;
+                document.getElementById('accentColor').value = this.settings.accentColor;
+                document.getElementById('headingColor').value = this.settings.headingColor;
+                document.getElementById('fontFamily').value = this.settings.fontFamily;
+                document.getElementById('fontSize').value = this.settings.fontSize;
+                document.getElementById('textOutline').value = this.settings.textOutline;
+                document.getElementById('maxWidth').value = this.settings.maxWidth;
+                document.getElementById('padding').value = this.settings.padding;
+            }
+
+            attachEventListeners() {
+                // Background image
+                document.getElementById('bgImage').addEventListener('change', this.handleImageUpload.bind(this));
+                document.getElementById('removeBg').addEventListener('click', this.removeBg.bind(this));
+
+                // Color inputs
+                ['textColor', 'accentColor', 'headingColor'].forEach(id => {
+                    document.getElementById(id).addEventListener('input', this.updateColorPreview.bind(this, id));
+                });
+
+                // Font settings
+                document.getElementById('fontFamily').addEventListener('change', this.updateFontPreview.bind(this));
+                document.getElementById('fontSize').addEventListener('input', this.updateFontPreview.bind(this));
+                document.getElementById('textOutline').addEventListener('change', this.updateFontPreview.bind(this));
+
+                // Layout settings
+                document.getElementById('maxWidth').addEventListener('input', this.updateLayoutPreview.bind(this));
+                document.getElementById('padding').addEventListener('input', this.updateLayoutPreview.bind(this));
+
+                // Buttons
+                document.getElementById('saveSettings').addEventListener('click', this.save.bind(this));
+                document.getElementById('previewSettings').addEventListener('click', this.preview.bind(this));
+                document.getElementById('resetSettings').addEventListener('click', this.reset.bind(this));
+            }
+
+            handleImageUpload(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.settings.bgImage = e.target.result;
+                        this.updateBgPreview();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+
+            removeBg() {
+                this.settings.bgImage = '';
+                document.getElementById('bgImage').value = '';
+                this.updateBgPreview();
+            }
+
+            updateColorPreview(colorId) {
+                const color = document.getElementById(colorId).value;
+                this.settings[colorId] = color;
+                document.getElementById(colorId + 'Preview').style.backgroundColor = color;
+            }
+
+            updateFontPreview() {
+                const family = document.getElementById('fontFamily').value;
+                const size = document.getElementById('fontSize').value;
+                const outline = document.getElementById('textOutline').value;
+
+                this.settings.fontFamily = family;
+                this.settings.fontSize = parseInt(size);
+                this.settings.textOutline = outline;
+
+                document.getElementById('fontSizeValue').textContent = size + 'px';
+
+                const preview = document.getElementById('fontPreview');
+                preview.style.fontFamily = family;
+                preview.style.fontSize = size + 'px';
+
+                // Apply text outline
+                this.applyTextOutline(preview, outline);
+            }
+
+            updateLayoutPreview() {
+                const maxWidth = document.getElementById('maxWidth').value;
+                const padding = document.getElementById('padding').value;
+
+                this.settings.maxWidth = parseInt(maxWidth);
+                this.settings.padding = parseFloat(padding);
+
+                document.getElementById('maxWidthValue').textContent = maxWidth + 'rem';
+                document.getElementById('paddingValue').textContent = padding + 'rem';
+            }
+
+            applyTextOutline(element, outlineType) {
+                switch(outlineType) {
+                    case 'light':
+                        element.style.textShadow = '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000';
+                        break;
+                    case 'dark':
+                        element.style.textShadow = '-1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff';
+                        break;
+                    case 'heavy':
+                        element.style.textShadow = '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000, 3px 3px 0 #000';
+                        break;
+                    default:
+                        element.style.textShadow = 'none';
+                }
+            }
+
+            updateBgPreview() {
+                const preview = document.getElementById('bgPreview');
+                if (this.settings.bgImage) {
+                    preview.style.backgroundImage = `url(${this.settings.bgImage})`;
+                    preview.textContent = '';
+                } else {
+                    preview.style.backgroundImage = 'none';
+                    preview.textContent = 'No background image selected';
+                }
+            }
+
+            updatePreviews() {
+                this.updateBgPreview();
+                ['textColor', 'accentColor', 'headingColor'].forEach(id => {
+                    this.updateColorPreview(id);
+                });
+                this.updateFontPreview();
+                this.updateLayoutPreview();
+            }
+
+            save() {
+                this.saveSettings();
+                this.applySettings();
+                alert('Settings saved successfully!');
+            }
+
+            preview() {
+                this.applySettings();
+            }
+
+            reset() {
+                if (confirm('Are you sure you want to reset all settings to default?')) {
+                    localStorage.removeItem('appSettings');
+                    this.settings = this.loadSettings();
+                    this.initializeUI();
+                    this.updatePreviews();
+                    this.applySettings();
+                }
+            }
+
+            applySettings() {
+                // Apply settings to current page
+                const root = document.documentElement;
+                root.style.setProperty('--text-color', this.settings.textColor);
+                root.style.setProperty('--accent-color', this.settings.accentColor);
+                root.style.setProperty('--heading-color', this.settings.headingColor);
+                root.style.setProperty('--font-family', this.settings.fontFamily);
+                root.style.setProperty('--max-width', this.settings.maxWidth + 'rem');
+                root.style.setProperty('--padding', this.settings.padding + 'rem');
+
+                // Apply text outline
+                let textStroke = 'none';
+                let headingStroke = 'none';
+
+                switch(this.settings.textOutline) {
+                    case 'light':
+                        textStroke = '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000';
+                        headingStroke = textStroke;
+                        break;
+                    case 'dark':
+                        textStroke = '-1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff';
+                        headingStroke = textStroke;
+                        break;
+                    case 'heavy':
+                        textStroke = '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000, 3px 3px 0 #000';
+                        headingStroke = textStroke;
+                        break;
+                }
+
+                root.style.setProperty('--text-stroke', textStroke);
+                root.style.setProperty('--heading-stroke', headingStroke);
+
+                document.body.style.fontSize = this.settings.fontSize + 'px';
+
+                if (this.settings.bgImage) {
+                    document.body.style.backgroundImage = `url(${this.settings.bgImage})`;
+                    document.body.classList.add('has-bg-image');
+                } else {
+                    document.body.style.backgroundImage = 'none';
+                    document.body.classList.remove('has-bg-image');
+                }
+            }
+        }
+
+        // Initialize settings manager when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new SettingsManager();
+        });
+    </script>
+
+    <footer>
+        <hr>
+        <p><a href="collections.html">Collections</a></p>
+        <p><a href="/">Homepage</a></p>
+        <p><a href="scanner.html">Scan</a></p>
+        <p><a href="settings.html">Settings</a></p>
+        <p><a id="random-entry-link-collection" href="#">Random</a></p>
+    </footer>
+    <script src="./random_entry.js"></script>
+
+</body>
+</html>
