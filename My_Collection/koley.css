@@ -1,76 +1,292 @@
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-  line-height: 1.6;
-  color: #222;
-  max-width: 50rem;
-  padding: 2rem;
-  margin: auto;
-  background: #fafafa;
-  min-height: 100vh; /* this and two below added for floating footer */
-  display: flex;
-  flex-direction: column;
+/* Root variables for user customization */
+:root {
+  --bg-color: #fafafa;
+  --text-color: #222;
+  --accent-color: #5eb5f4;
+  --heading-color: #1e60ca;
+  --footer-bg: #f0f0f0;
+  --footer-text: #333;
+  --max-width: 50rem;
+  --padding: 2rem;
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --text-stroke: none;
+  --heading-stroke: none;
 }
 
 html {
-    height: 100%; /* added for float */
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-family);
+  line-height: 1.6;
+  color: var(--text-color);
+  max-width: var(--max-width);
+  padding: var(--padding);
+  margin: auto;
+  background: var(--bg-color);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 60px; /* Space for fixed footer */
+
+  /* Background image support */
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+
+  /* Text stroke for readability over images */
+  text-shadow: var(--text-stroke);
+}
+
+/* Background overlay for better text readability over images */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+body.has-bg-image::before {
+  opacity: 1;
 }
 
 img {
   max-width: 100%;
+  height: auto;
 }
 
 a {
-  color: #5eb5f4;
+  color: var(--accent-color);
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  opacity: 0.8;
 }
 
 h1,
 h2,
 strong {
-  color: #1e60ca;
+  color: var(--heading-color);
+  text-shadow: var(--heading-stroke);
+}
+
+/* Text stroke utility classes */
+.text-outline-light {
+  text-shadow:
+    -1px -1px 0 #000,
+     1px -1px 0 #000,
+    -1px  1px 0 #000,
+     1px  1px 0 #000,
+    -2px -2px 0 #000,
+     2px -2px 0 #000,
+    -2px  2px 0 #000,
+     2px  2px 0 #000;
+}
+
+.text-outline-dark {
+  text-shadow:
+    -1px -1px 0 #fff,
+     1px -1px 0 #fff,
+    -1px  1px 0 #fff,
+     1px  1px 0 #fff,
+    -2px -2px 0 #fff,
+     2px -2px 0 #fff,
+    -2px  2px 0 #fff,
+     2px  2px 0 #fff;
+}
+
+.text-outline-heavy {
+  text-shadow:
+    -2px -2px 0 #000,
+     2px -2px 0 #000,
+    -2px  2px 0 #000,
+     2px  2px 0 #000,
+    -3px -3px 0 #000,
+     3px -3px 0 #000,
+    -3px  3px 0 #000,
+     3px  3px 0 #000;
 }
 
 .entry-poster {
-    max-width: 30%;
-    height: auto; /* Adjust as needed */
-    object-fit: cover; /* Maintain aspect ratio and crop if necessary */
+  max-width: 30%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* added for float */
 .content {
-  flex-grow: 1; /* Allow content to take up remaining vertical space */
+  flex-grow: 1;
 }
 
 footer {
-    position: fixed;
-    left: 0;
-    bottom: 0;
-    width: 100%;
-    background-color: #f0f0f0; /* Adjust as needed */
-    color: #333; /* Adjust as needed */
-    text-align: center;
-    padding: 10px 0; /* Adjust as needed */
-    z-index: 100; /* Ensure it stays on top of other content if needed */
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  background-color: var(--footer-bg);
+  color: var(--footer-text);
+  text-align: center;
+  padding: 10px 0;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 footer p {
-    display: inline-block;
-    margin: 0 10px; /* Adjust spacing between links as needed */
+  display: inline-block;
+  margin: 0 10px;
 }
 
 footer hr {
-    margin-bottom: 5px; /* Adjust spacing between hr and links */
+  margin-bottom: 5px;
 }
 
-/* Add padding to the bottom of the body to prevent overlap */
-body {
-    padding-bottom: 60px; /* Adjust this value to be the height of your footer */
+.delete-button {
+  transition: all 0.2s ease;
 }
-/* to here */
 
 .delete-button:hover {
-    background-color: #c82333; /* Slightly darker red */
+  background-color: #c82333;
 }
+
 .delete-button:active {
-    background-color: #bd212d;
-    transform: translateY(1px); /* Slight press effect */
+  background-color: #bd212d;
+  transform: translateY(1px);
+}
+
+/* Settings button styles */
+.settings-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  font-size: 18px;
+  z-index: 1000;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.settings-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Mobile Responsive Design */
+@media screen and (max-width: 768px) {
+  :root {
+    --max-width: 100%;
+    --padding: 1rem;
+  }
+
+  body {
+    margin: 0;
+    background-attachment: scroll; /* Better performance on mobile */
+  }
+
+  .entry-poster {
+    max-width: 50%;
+  }
+
+  footer {
+    padding: 15px 10px;
+  }
+
+  footer p {
+    display: block;
+    margin: 5px 0;
+  }
+
+  .settings-btn {
+    top: 15px;
+    right: 15px;
+    width: 45px;
+    height: 45px;
+    font-size: 16px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  :root {
+    --padding: 0.75rem;
+  }
+
+  body {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+  }
+
+  .entry-poster {
+    max-width: 70%;
+  }
+
+  footer {
+    font-size: 12px;
+    padding: 12px 5px;
+  }
+}
+
+/* Tablet landscape */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+  :root {
+    --max-width: 45rem;
+    --padding: 1.5rem;
+  }
+}
+
+/* Large screens */
+@media screen and (min-width: 1200px) {
+  :root {
+    --max-width: 55rem;
+    --padding: 2.5rem;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --bg-color: #ffffff;
+    --text-color: #000000;
+    --accent-color: #0000ff;
+    --heading-color: #000080;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: #1a1a1a;
+    --text-color: #e0e0e0;
+    --accent-color: #66b3ff;
+    --heading-color: #4da6ff;
+    --footer-bg: #2a2a2a;
+    --footer-text: #e0e0e0;
+  }
+
+  body::before {
+    background: rgba(0, 0, 0, 0.3);
+  }
 }
