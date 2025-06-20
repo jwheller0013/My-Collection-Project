@@ -1,5 +1,7 @@
 # My-Collection-Project
 
+My Collection is a collection app that allows a user to scan the barcode of an item to fill out parameters of an item to add to their collection. Once added to a collection the user can view their collections, view entries in their collection, edit entry details, sort the collection, select one at random from the collection, go to a random item from all their collections, and future plans to improve the control of your collection. The initial layout currently is designed for movies so while the upc scan will fill out some fields of the entry if it is noticed to be a movie it will auto fill fields for the entry. Collection types help the app set parameters for entries in the collection and will be used to flesh out further features for specific types. For example Video Games time played or completion, Books read/unread, and for all items an option to note if lent to someone. 
+
 Conect with me:
 James Heller: https://www.linkedin.com/in/james-heller-xiii/
 
