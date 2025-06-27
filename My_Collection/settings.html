@@ -5,22 +5,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings - Customize Your Experience</title>
     <style>
-        /* Include your main CSS here or link to it */
+        /* CSS Custom Properties for settings */
+        :root {
+            --text-color: #222;
+            --accent-color: #5eb5f4;
+            --heading-color: #1e60ca;
+            --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            --font-size: 16px;
+            --max-width: 50rem;
+            --padding: 2rem;
+            --text-stroke: none;
+            --heading-stroke: none;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            font-family: var(--font-family);
             line-height: 1.6;
-            color: #222;
-            max-width: 50rem;
-            padding: 2rem;
+            color: var(--text-color);
+            max-width: var(--max-width);
+            padding: var(--padding);
             margin: auto;
             background: #fafafa;
             min-height: 100vh;
+            font-size: var(--font-size);
+        }
+
+        footer {
+          position: fixed;
+          left: 0;
+          bottom: 0;
+          width: 100%;
+          background-color: var(--footer-bg);
+          color: var(--footer-text);
+          text-align: center;
+          padding: 10px 0;
+          z-index: 100;
+          backdrop-filter: blur(10px);
+          border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        footer p {
+          display: inline-block;
+          margin: 0 10px;
+        }
+
+        footer hr {
+          margin-bottom: 5px;
+        }
+
+        /* Apply text stroke if set */
+        body {
+            text-shadow: var(--text-stroke);
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--heading-color);
+            text-shadow: var(--heading-stroke);
         }
 
         .settings-container {
             background: white;
             border-radius: 12px;
-            padding: 2rem;
+            padding: var(--padding);
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             margin-bottom: 2rem;
         }
@@ -40,7 +86,7 @@
             display: block;
             font-weight: 600;
             margin-bottom: 0.5rem;
-            color: #1e60ca;
+            color: var(--heading-color);
         }
 
         .setting-description {
@@ -100,7 +146,7 @@
         }
 
         .btn-primary {
-            background: #1e60ca;
+            background: var(--heading-color);
             color: white;
         }
 
@@ -139,6 +185,13 @@
             justify-content: center;
             color: #666;
             font-style: italic;
+        }
+
+        /* Background image support */
+        body.has-bg-image {
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
         }
 
         @media (max-width: 768px) {
@@ -249,11 +302,13 @@
             <div style="margin-bottom: 1rem;">
                 <label for="maxWidth">Content Width: <span id="maxWidthValue">50rem</span></label>
                 <input type="range" id="maxWidth" min="30" max="70" value="50">
+                <div class="setting-description">Controls the maximum width of content containers</div>
             </div>
 
             <div style="margin-bottom: 1rem;">
                 <label for="padding">Padding: <span id="paddingValue">2rem</span></label>
                 <input type="range" id="padding" min="1" max="4" step="0.5" value="2">
+                <div class="setting-description">Controls the spacing around content</div>
             </div>
         </div>
 
@@ -272,6 +327,7 @@
                 this.initializeUI();
                 this.attachEventListeners();
                 this.updatePreviews();
+                this.applySettings(); // Apply settings immediately
             }
 
             loadSettings() {
@@ -336,6 +392,7 @@
                     reader.onload = (e) => {
                         this.settings.bgImage = e.target.result;
                         this.updateBgPreview();
+                        this.applySettings(); // Apply immediately for preview
                     };
                     reader.readAsDataURL(file);
                 }
@@ -345,12 +402,14 @@
                 this.settings.bgImage = '';
                 document.getElementById('bgImage').value = '';
                 this.updateBgPreview();
+                this.applySettings(); // Apply immediately
             }
 
             updateColorPreview(colorId) {
                 const color = document.getElementById(colorId).value;
                 this.settings[colorId] = color;
                 document.getElementById(colorId + 'Preview').style.backgroundColor = color;
+                this.applySettings(); // Apply immediately for live preview
             }
 
             updateFontPreview() {
@@ -370,6 +429,7 @@
 
                 // Apply text outline
                 this.applyTextOutline(preview, outline);
+                this.applySettings(); // Apply to whole page
             }
 
             updateLayoutPreview() {
@@ -381,6 +441,8 @@
 
                 document.getElementById('maxWidthValue').textContent = maxWidth + 'rem';
                 document.getElementById('paddingValue').textContent = padding + 'rem';
+
+                this.applySettings(); // Apply immediately for live preview
             }
 
             applyTextOutline(element, outlineType) {
@@ -440,12 +502,13 @@
             }
 
             applySettings() {
-                // Apply settings to current page
+                // Apply settings to current page using CSS custom properties
                 const root = document.documentElement;
                 root.style.setProperty('--text-color', this.settings.textColor);
                 root.style.setProperty('--accent-color', this.settings.accentColor);
                 root.style.setProperty('--heading-color', this.settings.headingColor);
                 root.style.setProperty('--font-family', this.settings.fontFamily);
+                root.style.setProperty('--font-size', this.settings.fontSize + 'px');
                 root.style.setProperty('--max-width', this.settings.maxWidth + 'rem');
                 root.style.setProperty('--padding', this.settings.padding + 'rem');
 
@@ -471,8 +534,6 @@
                 root.style.setProperty('--text-stroke', textStroke);
                 root.style.setProperty('--heading-stroke', headingStroke);
 
-                document.body.style.fontSize = this.settings.fontSize + 'px';
-
                 if (this.settings.bgImage) {
                     document.body.style.backgroundImage = `url(${this.settings.bgImage})`;
                     document.body.classList.add('has-bg-image');
@@ -494,7 +555,6 @@
         <p><a href="collections.html">Collections</a></p>
         <p><a href="/">Homepage</a></p>
         <p><a href="scanner.html">Scan</a></p>
-        <p><a href="settings.html">Settings</a></p>
         <p><a id="random-entry-link-collection" href="#">Random</a></p>
     </footer>
     <script src="./random_entry.js"></script>
