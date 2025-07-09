@@ -19,16 +19,16 @@ cleanup() {
 trap cleanup SIGINT SIGTERM
 
 # Start the Python HTTP server from root directory
-python3 -m http.server 9000 &
+python -m http.server 9000 &
 HTTP_PID=$!
 
 # Change to app directory and start Flask app
 cd My_Collection
-python3 ./app.py &
+python ./app.py &
 FLASK_PID=$!
 
 # Start Flask app
-python3 ./app.py &
+python ./app.py &
 FLASK_PID=$!
 
 echo "HTTP server running on port 9000 (PID: $HTTP_PID)"
