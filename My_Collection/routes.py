@@ -2,7 +2,7 @@ import random
 
 import requests
 from flask import request, jsonify, send_from_directory, render_template
-from models import db, User, Collection, Entry, Media, Genre, Videogame
+from models import db, User, Collection, Entry, Media, Genre, Videogame, Book
 from tmdb_api import search_movie, get_movie_details, get_imdb_link_from_movie_id
 from sqlalchemy.orm import joinedload, aliased
 from sqlalchemy.sql import func
@@ -97,10 +97,11 @@ def init_routes(app):
         # Query all types of entries
         media_entries = Media.query.all()
         videogame_entries = Videogame.query.all()
+        book_entries = Book.query.all()
         general_entries = Entry.query.all()
 
         # Combine all entries into one list
-        all_entries = media_entries + videogame_entries + general_entries
+        all_entries = media_entries + videogame_entries + book_entries + general_entries
 
         # Return them as JSON
         return jsonify([entry.to_dict() for entry in all_entries])
@@ -145,6 +146,9 @@ def init_routes(app):
             if entry.type == 'media' and isinstance(entry, Media):
                 entry.rating = data.get('rating', entry.rating)
                 entry.link = data.get('link', entry.link)
+            elif entry.type == 'book' and isinstance(entry, Book):
+                entry.author = data.get('author', entry.author)
+                entry.is_read = data.get('is_read', entry.is_read)
             # No specific fields to handle for 'videogame' beyond the common ones,
             # but you could add an elif for 'videogame' if you had unique fields later.
 
@@ -255,6 +259,20 @@ def init_routes(app):
         elif entry_type == 'videogames':
             entries = Videogame.query.options(joinedload(Videogame.genres)).filter_by(
                 collection_id=collection.id).order_by(Videogame.title.asc()).all()
+
+        elif entry_type == 'books':
+            query = db.session.query(Book).options(joinedload(Book.genres)).filter_by(collection_id=collection.id)
+
+            if sort_by == 'author':
+                query = query.order_by(Book.author.asc(), Book.title.asc())
+            elif sort_by == 'genre':
+                genre_alias = aliased(Genre)
+                query = query.outerjoin(Book.genres.of_type(genre_alias))
+                query = query.order_by(func.coalesce(genre_alias.name, ""), Book.title.asc())
+            else:
+                query = query.order_by(Book.title.asc())
+
+            entries = query.all()
 
         else:
             entries = Entry.query.options(joinedload(Entry.genres)).filter_by(collection_id=collection.id).order_by(
@@ -370,6 +388,34 @@ def init_routes(app):
 
             new_entry = Videogame(
                 title=title,
+                poster=poster,
+                upc=upc,
+                overview=overview,
+                user_id=user_id,
+                collection_id=collection_id,
+            )
+
+        elif entry_type == 'books':
+            title = data.get('title')
+            author = data.get('author')
+            is_read = data.get('is_read', False)
+            poster = data.get('poster')
+            upc = data.get('upc')
+            overview = data.get('overview')
+
+            if not title:
+                return jsonify({"msg": "Title is required for book entries"}), 400
+
+            if not author:
+                return jsonify({"msg": "Author is required for book entries"}), 400
+
+            if upc == "":
+                upc = None
+
+            new_entry = Book(
+                title=title,
+                author=author,
+                is_read=is_read,
                 poster=poster,
                 upc=upc,
                 overview=overview,
@@ -516,6 +562,9 @@ def init_routes(app):
         # Determine if the item is a movie or TV show
         is_film = any(keyword in category for keyword in ['dvd', 'blu-ray', 'movie', 'television', 'tv'])
 
+        # Check if it's a book
+        is_book = any(keyword in category for keyword in ['book', 'books', 'novel', 'paperback', 'hardcover'])
+
         if is_film:
             try:
                 movie = search_movie(title)  # Search for movie on TMDB
@@ -557,7 +606,29 @@ def init_routes(app):
                 "genres": [{"name": genre_name} for genre_name in genre_names]
             }), 200
 
-        # Non-movie fallback (non-film item)
+        elif is_book:
+            # For books, we'll try to extract author from the title or description
+            # This is a basic implementation - you might want to integrate with a book API
+            author = "Unknown Author"  # Default fallback
+
+            # Try to extract author from title (common format: "Title by Author")
+            if " by " in title:
+                parts = title.split(" by ")
+                if len(parts) >= 2:
+                    title = parts[0].strip()
+                    author = parts[1].strip()
+
+            return jsonify({
+                "title": title,
+                "author": author,
+                "overview": description,
+                "poster": images[0] if images else None,
+                "upc": upc,
+                "is_read": False,
+                "type": "book"
+            }), 200
+
+        # Non-movie/non-book fallback (videogame or general item)
         return jsonify({
             "title": title,
             "overview": description,
@@ -609,6 +680,19 @@ def init_routes(app):
                 collection_id=collection.id).order_by(
                 Videogame.title.asc()).all()
 
+        elif entry_type == 'books':
+            query = db.session.query(Book).options(joinedload(Book.genres)).filter_by(collection_id=collection.id)
+
+            if sort == 'author':
+                query = query.order_by(Book.author.asc(), Book.title.asc())
+            elif sort == 'genre':
+                query = query.outerjoin(Book.genres.of_type(genre_alias))
+                query = query.order_by(func.coalesce(genre_alias.name, ""), Book.title.asc())
+            else:
+                query = query.order_by(Book.title.asc())
+
+            entries = query.all()
+
         else:  # default to general entries
             entries = Entry.query.options(joinedload(Entry.genres)).filter_by(collection_id=collection.id).order_by(
                 Entry.title.asc()).all()
@@ -637,6 +721,19 @@ def init_routes(app):
         elif entry_type == 'videogames':
             entries = Videogame.query.filter_by(collection_id=collection.id).order_by(
                 Videogame.title.asc()).all()
+
+        elif entry_type == 'books':
+            query = db.session.query(Book).filter_by(collection_id=collection.id)
+
+            if sort == 'author':
+                query = query.order_by(Book.author.asc(), Book.title.asc())
+            elif sort == 'genre':
+                query = query.outerjoin(Book.genres.of_type(genre_alias))
+                query = query.order_by(func.coalesce(genre_alias.name, ""), Book.title.asc())
+            else:
+                query = query.order_by(Book.title.asc())
+
+            entries = query.all()
 
         else:
             entries = Entry.query.filter_by(collection_id=collection.id).order_by(

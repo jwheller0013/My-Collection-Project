@@ -82,6 +82,15 @@ class Collection(db.Model):
                 'poster': entry.poster,
                 'upc': entry.upc
             })
+        elif isinstance(entry, Book):
+            entry_dict.update({
+                'title': entry.title,
+                'overview': entry.overview,
+                'poster': entry.poster,
+                'upc': entry.upc,
+                'author': entry.author,
+                'is_read': entry.is_read
+            })
         return entry_dict
 
 class Genre(db.Model):
@@ -189,5 +198,31 @@ class Videogame(Entry):
     def to_dict(self):
         return super().to_dict()
 
+class Book(Entry):
+    __mapper_args__ = {
+        'polymorphic_identity': 'book',
+    }
 
+    author = db.Column(db.String(100), nullable=False)
+    is_read = db.Column(db.Boolean, default=False)
 
+    def __init__(self, title, author, is_read=False, overview=None, upc=None, poster=None, user_id=None, collection_id=None):
+        super().__init__(
+            title=title,
+            overview=overview,
+            upc=upc,
+            poster=poster,
+            user_id=user_id,
+            collection_id=collection_id,
+            type='book'
+        )
+        self.author = author
+        self.is_read = is_read
+
+    def to_dict(self):
+        base_dict = super().to_dict()
+        return {
+            **base_dict,
+            'author': self.author,
+            'is_read': self.is_read
+        }
