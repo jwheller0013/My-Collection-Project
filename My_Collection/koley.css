@@ -28,7 +28,6 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding-bottom: 60px; /* Space for fixed footer */
 
   /* Background image support */
   background-size: cover;
@@ -128,6 +127,14 @@ strong {
   flex-grow: 1;
 }
 
+/* Add padding to main content areas to avoid footer overlap */
+#entries-list,
+#section,
+main,
+.main-content {
+  padding-bottom: 80px;
+}
+
 footer {
   position: fixed;
   left: 0;
@@ -199,6 +206,14 @@ footer hr {
     background-attachment: scroll; /* Better performance on mobile */
   }
 
+  /* Increase padding for mobile content areas */
+  #entries-list,
+  #section,
+  main,
+  .main-content {
+    padding-bottom: 100px;
+  }
+
   .entry-poster {
     max-width: 50%;
   }
@@ -229,6 +244,14 @@ footer hr {
   body {
     font-size: 14px;
     line-height: 1.5;
+  }
+
+  /* Even more padding for small screens */
+  #entries-list,
+  #section,
+  main,
+  .main-content {
+    padding-bottom: 110px;
   }
 
   h1 {
