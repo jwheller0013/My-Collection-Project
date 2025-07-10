@@ -19,40 +19,8 @@
       </select>
     </div>
 
-    <div id="media-fields">
-      <h2>Add Media Entry</h2>
-      <div>
-        <label for="title">Title:</label>
-        <input type="text" id="title" name="title">
-      </div>
-      <div>
-        <label for="tv_film">TV/Film (1 for Film, 0 for TV):</label>
-        <input type="number" id="tv_film" name="tv_film" min="0" max="1">
-      </div>
-      <div>
-        <label for="rating">Rating:</label>
-        <input type="number" id="rating" name="rating" step="0.1" min="0" max="10">
-      </div>
-      <div>
-        <label for="link">IMDb Link:</label>
-        <input type="url" id="link" name="link">
-      </div>
-      <div>
-        <label for="poster">Poster URL:</label>
-        <input type="url" id="poster" name="poster">
-      </div>
-      <div>
-        <label for="upc">UPC:</label>
-        <input type="text" id="upc" name="upc">
-      </div>
-      <div>
-        <label for="overview">Overview:</label>
-        <textarea id="overview" name="overview"></textarea>
-      </div>
-<!--        <label for="genres">Genre:</label>-->
-<!--        <input type="genres" id="genres" name="genres">-->
-      <!-- Genre field will be added dynamically here -->
-    </div>
+    <!-- Dynamic form fields will be inserted here -->
+    <div id="dynamic-fields"></div>
 
     <button type="submit">Add to Collection</button>
     <div id="form-submission-message"></div>
@@ -68,15 +36,16 @@
       <p><a id="random-entry-link-collection" href="#">Random</a></p>
   </footer>
 
-
   <script src="./random_entry.js"></script>
   <script>
   document.addEventListener('DOMContentLoaded', function () {
       const collectionDropdown = document.getElementById('collection_id');
       const formSubmissionMessage = document.getElementById('form-submission-message');
+      const dynamicFieldsContainer = document.getElementById('dynamic-fields');
       const API_URL = 'http://localhost:8080';
 
       let resolvedGenres = [];
+      let currentCollectionType = '';
 
       function fetchCollections() {
           fetch(`${API_URL}/collections`)
@@ -96,6 +65,119 @@
               });
       }
 
+      function createFormFields(collectionType) {
+          dynamicFieldsContainer.innerHTML = ''; // Clear existing fields
+          currentCollectionType = collectionType;
+
+          const h2 = document.createElement('h2');
+          h2.textContent = `Add ${collectionType.charAt(0).toUpperCase() + collectionType.slice(1)} Entry`;
+          dynamicFieldsContainer.appendChild(h2);
+
+          // Common fields for all types
+          const commonFields = [
+              { id: 'title', label: 'Title:', type: 'text', required: true },
+              { id: 'overview', label: 'Overview:', type: 'textarea' },
+              { id: 'poster', label: 'Poster URL:', type: 'url' },
+              { id: 'upc', label: 'UPC:', type: 'text' }
+          ];
+
+          commonFields.forEach(field => {
+              const div = document.createElement('div');
+              const label = document.createElement('label');
+              label.setAttribute('for', field.id);
+              label.textContent = field.label;
+              div.appendChild(label);
+
+              let input;
+              if (field.type === 'textarea') {
+                  input = document.createElement('textarea');
+              } else {
+                  input = document.createElement('input');
+                  input.type = field.type;
+              }
+              input.id = field.id;
+              input.name = field.id;
+              if (field.required) input.required = true;
+              div.appendChild(input);
+              dynamicFieldsContainer.appendChild(div);
+          });
+
+          // Type-specific fields
+          if (collectionType === 'media') {
+              const mediaFields = [
+                  { id: 'tv_film', label: 'TV/Film (1 for Film, 0 for TV):', type: 'number', min: 0, max: 1 },
+                  { id: 'rating', label: 'Rating:', type: 'number', step: 0.1, min: 0, max: 10 },
+                  { id: 'link', label: 'IMDb Link:', type: 'url' }
+              ];
+
+              mediaFields.forEach(field => {
+                  const div = document.createElement('div');
+                  const label = document.createElement('label');
+                  label.setAttribute('for', field.id);
+                  label.textContent = field.label;
+                  div.appendChild(label);
+
+                  const input = document.createElement('input');
+                  input.type = field.type;
+                  input.id = field.id;
+                  input.name = field.id;
+                  if (field.step) input.step = field.step;
+                  if (field.min !== undefined) input.min = field.min;
+                  if (field.max !== undefined) input.max = field.max;
+                  div.appendChild(input);
+                  dynamicFieldsContainer.appendChild(div);
+              });
+          } else if (collectionType === 'books') {
+              const bookFields = [
+                  { id: 'author', label: 'Author:', type: 'text', required: true },
+                  { id: 'is_read', label: 'Is Read:', type: 'checkbox' }
+              ];
+
+              bookFields.forEach(field => {
+                  const div = document.createElement('div');
+                  const label = document.createElement('label');
+                  label.setAttribute('for', field.id);
+                  label.textContent = field.label;
+
+                  if (field.type === 'checkbox') {
+                      const input = document.createElement('input');
+                      input.type = field.type;
+                      input.id = field.id;
+                      input.name = field.id;
+                      div.appendChild(input);
+                      div.appendChild(label);
+                  } else {
+                      div.appendChild(label);
+                      const input = document.createElement('input');
+                      input.type = field.type;
+                      input.id = field.id;
+                      input.name = field.id;
+                      if (field.required) input.required = true;
+                      div.appendChild(input);
+                  }
+                  dynamicFieldsContainer.appendChild(div);
+              });
+          }
+          // videogames type only needs common fields, so no additional fields needed
+      }
+
+      // Handle collection selection change
+      collectionDropdown.addEventListener('change', function() {
+          const selectedOption = this.options[this.selectedIndex];
+          if (selectedOption.value) {
+              const collectionType = selectedOption.dataset.collectionType;
+              createFormFields(collectionType);
+
+              // Re-populate UPC data if it exists
+              const upc = getUPCFromURL();
+              if (upc) {
+                  lookupUPC(upc);
+              }
+          } else {
+              dynamicFieldsContainer.innerHTML = '';
+          }
+      });
+
       function getUPCFromURL() {
           const urlParams = new URLSearchParams(window.location.search);
           return urlParams.get('upc');
@@ -114,17 +196,42 @@
           .then(data => {
               console.log("UPC lookup result:", data);
 
-              if (data.title) document.getElementById('title').value = data.title;
-              if (data.overview) document.getElementById('overview').value = data.overview;
-              if (data.poster) document.getElementById('poster').value = data.poster;
-              if (data.rating !== undefined) {
-                  let roundedRating = Math.round(data.rating * 10) / 10;
-                  document.getElementById('rating').value = roundedRating;
+              // Populate common fields
+              if (data.title && document.getElementById('title')) {
+                  document.getElementById('title').value = data.title;
               }
-              if (data.tv_film !== undefined) document.getElementById('tv_film').value = data.tv_film;
-              if (data.link) document.getElementById('link').value = data.link;
-              document.getElementById('upc').value = upc;
+              if (data.overview && document.getElementById('overview')) {
+                  document.getElementById('overview').value = data.overview;
+              }
+              if (data.poster && document.getElementById('poster')) {
+                  document.getElementById('poster').value = data.poster;
+              }
+              if (data.upc && document.getElementById('upc')) {
+                  document.getElementById('upc').value = data.upc;
+              }
 
+              // Populate type-specific fields
+              if (currentCollectionType === 'media') {
+                  if (data.rating !== undefined && document.getElementById('rating')) {
+                      let roundedRating = Math.round(data.rating * 10) / 10;
+                      document.getElementById('rating').value = roundedRating;
+                  }
+                  if (data.tv_film !== undefined && document.getElementById('tv_film')) {
+                      document.getElementById('tv_film').value = data.tv_film;
+                  }
+                  if (data.link && document.getElementById('link')) {
+                      document.getElementById('link').value = data.link;
+                  }
+              } else if (currentCollectionType === 'books') {
+                  if (data.author && document.getElementById('author')) {
+                      document.getElementById('author').value = data.author;
+                  }
+                  if (data.is_read !== undefined && document.getElementById('is_read')) {
+                      document.getElementById('is_read').checked = data.is_read;
+                  }
+              }
+
+              // Handle genres
               if (data.genres && data.genres.length > 0) {
                   resolvedGenres = data.genres.map(g => g.name);
 
@@ -145,13 +252,15 @@
                       genreInput.readOnly = true;
 
                       genreDiv.appendChild(genreInput);
-                      document.getElementById('media-fields').appendChild(genreDiv);
+                      dynamicFieldsContainer.appendChild(genreDiv);
                   }
               }
           })
           .catch(error => {
               console.warn('Falling back to manual input:', error);
-              document.getElementById('upc').value = upc;
+              if (document.getElementById('upc')) {
+                  document.getElementById('upc').value = upc;
+              }
           });
       }
 
@@ -166,25 +275,33 @@
               return;
           }
 
-          let rating = parseFloat(document.getElementById('rating').value);
-          if (!isNaN(rating)) {
-              rating = Math.round(rating * 10) / 10;
-          } else {
-              rating = null;
-          }
-
+          // Build form data based on collection type
           const formData = {
               collection_id: selectedCollectionId,
               type: selectedCollectionType,
               title: document.getElementById('title').value,
-              tv_film: parseInt(document.getElementById('tv_film').value),
-              rating: rating,
-              link: document.getElementById('link').value,
+              overview: document.getElementById('overview').value,
               poster: document.getElementById('poster').value,
               upc: document.getElementById('upc').value,
-              overview: document.getElementById('overview').value,
               genre: resolvedGenres.join(', ')
           };
+
+          // Add type-specific fields
+          if (selectedCollectionType === 'media') {
+              let rating = parseFloat(document.getElementById('rating').value);
+              if (!isNaN(rating)) {
+                  rating = Math.round(rating * 10) / 10;
+              } else {
+                  rating = null;
+              }
+
+              formData.tv_film = parseInt(document.getElementById('tv_film').value);
+              formData.rating = rating;
+              formData.link = document.getElementById('link').value;
+          } else if (selectedCollectionType === 'books') {
+              formData.author = document.getElementById('author').value || 'Unknown Author';
+              formData.is_read = document.getElementById('is_read').checked;
+          }
 
           fetch(`${API_URL}/entries`, {
               method: 'POST',
@@ -201,6 +318,7 @@
               formSubmissionMessage.textContent = 'Entry added successfully!';
               document.getElementById('add-to-collection-form').reset();
               resolvedGenres = [];
+              dynamicFieldsContainer.innerHTML = '';
               const genreField = document.getElementById('genre');
               if (genreField) genreField.parentElement.remove();
           })
@@ -211,8 +329,6 @@
       });
 
       fetchCollections();
-      const upc = getUPCFromURL();
-      if (upc) lookupUPC(upc);
   });
   </script>
 
