@@ -675,12 +675,7 @@ def init_routes(app):
 
             entries = query.all()
 
-        elif entry_type == 'videogames':
-            entries = Videogame.query.options(joinedload(Videogame.genres)).filter_by(
-                collection_id=collection.id).order_by(
-                Videogame.title.asc()).all()
-
-        elif entry_type == 'books':
+        elif entry_type == 'books':  # Add books support
             query = db.session.query(Book).options(joinedload(Book.genres)).filter_by(collection_id=collection.id)
 
             if sort == 'author':
@@ -692,6 +687,11 @@ def init_routes(app):
                 query = query.order_by(Book.title.asc())
 
             entries = query.all()
+
+        elif entry_type == 'videogames':
+            entries = Videogame.query.options(joinedload(Videogame.genres)).filter_by(
+                collection_id=collection.id).order_by(
+                Videogame.title.asc()).all()
 
         else:  # default to general entries
             entries = Entry.query.options(joinedload(Entry.genres)).filter_by(collection_id=collection.id).order_by(
@@ -718,10 +718,6 @@ def init_routes(app):
 
             entries = query.all()
 
-        elif entry_type == 'videogames':
-            entries = Videogame.query.filter_by(collection_id=collection.id).order_by(
-                Videogame.title.asc()).all()
-
         elif entry_type == 'books':
             query = db.session.query(Book).filter_by(collection_id=collection.id)
 
@@ -734,6 +730,10 @@ def init_routes(app):
                 query = query.order_by(Book.title.asc())
 
             entries = query.all()
+
+        elif entry_type == 'videogames':
+            entries = Videogame.query.filter_by(collection_id=collection.id).order_by(
+                Videogame.title.asc()).all()
 
         else:
             entries = Entry.query.filter_by(collection_id=collection.id).order_by(
@@ -771,7 +771,21 @@ def init_routes(app):
                 entries = Media.query.options(joinedload(Media.genres)).filter_by(collection_id=collection_id).order_by(
                     Media.title.asc()).all()
 
-        elif entry_type == 'videogame':
+        elif entry_type == 'books':
+            query = db.session.query(Book).options(joinedload(Book.genres)).filter_by(collection_id=collection_id)
+
+            if sort_by == 'author':
+                query = query.order_by(Book.author.asc(), Book.title.asc())
+            elif sort_by == 'genre':
+                genre_alias = aliased(Genre)
+                query = query.outerjoin(Book.genres.of_type(genre_alias))
+                query = query.order_by(func.coalesce(genre_alias.name, ""), Book.title.asc())
+            else:  # alphabetical by title
+                query = query.order_by(Book.title.asc())
+
+            entries = query.all()
+
+        elif entry_type == 'videogames':
             entries = Videogame.query.options(joinedload(Videogame.genres)).filter_by(
                 collection_id=collection_id).order_by(Videogame.title.asc()).all()
 
