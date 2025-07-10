@@ -203,10 +203,10 @@ class Book(Entry):
         'polymorphic_identity': 'book',
     }
 
-    author = db.Column(db.String(100), nullable=False)
+    author = db.Column(db.String(100), nullable=False, default='Unknown Author')
     is_read = db.Column(db.Boolean, default=False)
 
-    def __init__(self, title, author, is_read=False, overview=None, upc=None, poster=None, user_id=None, collection_id=None):
+    def __init__(self, title, author=None, is_read=False, overview=None, upc=None, poster=None, user_id=None, collection_id=None):
         super().__init__(
             title=title,
             overview=overview,
@@ -216,7 +216,8 @@ class Book(Entry):
             collection_id=collection_id,
             type='book'
         )
-        self.author = author
+        # Set author with fallback to default
+        self.author = author or 'Unknown Author'
         self.is_read = is_read
 
     def to_dict(self):

@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# Detect OS and activate appropriate virtual environment
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+    # Windows (Git Bash)
+    source .venv/Scripts/activate
+else
+    # Mac/Linux
+    source .venv/bin/activate
+fi
+
 # Function to clean up processes
 cleanup() {
     echo "Shutting down servers..."
@@ -24,10 +33,6 @@ HTTP_PID=$!
 
 # Change to app directory and start Flask app
 cd My_Collection
-python ./app.py &
-FLASK_PID=$!
-
-# Start Flask app
 python ./app.py &
 FLASK_PID=$!
 
