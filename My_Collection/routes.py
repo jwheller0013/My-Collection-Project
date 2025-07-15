@@ -1,6 +1,7 @@
 import random
 
 import requests
+import json
 from flask import request, jsonify, send_from_directory, render_template
 from models import db, User, Collection, Entry, Media, Genre, Videogame, Book
 from tmdb_api import search_movie, get_movie_details, get_imdb_link_from_movie_id
@@ -800,3 +801,184 @@ def init_routes(app):
 
         annotated_entries = [{**entry.to_dict(), 'type': entry_type} for entry in entries]
         return jsonify(annotated_entries)
+
+
+###___AI___###
+def init_ai_routes(app):
+    @app.route('/ai_recommendations.html')
+    def ai_recommendations_page():
+        return send_from_directory('.', 'ai_recommendations.html')
+
+    @app.route('/api/ai_recommendations', methods=['POST'])
+    def get_ai_recommendations():
+        data = request.get_json()
+        collection_id = data.get('collection_id')
+        user_id = 1  # Replace with actual user authentication
+
+        if not collection_id:
+            return jsonify({"error": "Collection ID is required"}), 400
+
+        # Get user's API token (you'll need to add this to your User model)
+        user = User.query.get(user_id)
+        if not user or not hasattr(user, 'ai_token') or not user.ai_token:
+            return jsonify({"error": "AI token not configured. Please add your OpenRouter API token in settings."}), 400
+
+        # Get collection and its entries
+        collection = Collection.query.get_or_404(collection_id)
+
+        # Get entries based on collection type
+        if collection.collection_type == 'media':
+            entries = Media.query.filter_by(collection_id=collection_id).all()
+        elif collection.collection_type == 'books':
+            entries = Book.query.filter_by(collection_id=collection_id).all()
+        elif collection.collection_type == 'videogames':
+            entries = Videogame.query.filter_by(collection_id=collection_id).all()
+        else:
+            entries = Entry.query.filter_by(collection_id=collection_id).all()
+
+        if not entries:
+            return jsonify({"error": "No entries found in this collection"}), 404
+
+        # Prepare collection data for AI analysis
+        collection_data = []
+        for entry in entries:
+            entry_info = {
+                'title': entry.title,
+                'overview': entry.overview,
+                'genres': [genre.name for genre in entry.genres] if entry.genres else []
+            }
+
+            # Add type-specific information
+            if hasattr(entry, 'author'):
+                entry_info['author'] = entry.author
+            if hasattr(entry, 'rating'):
+                entry_info['rating'] = float(entry.rating) if entry.rating else None
+            if hasattr(entry, 'tv_film'):
+                entry_info['type'] = 'movie' if entry.tv_film else 'tv_show'
+
+            collection_data.append(entry_info)
+
+        # Generate AI recommendations
+        try:
+            recommendations = generate_ai_recommendations(user.ai_token, collection_data, collection.collection_type)
+            return jsonify({"recommendations": recommendations}), 200
+        except Exception as e:
+            return jsonify({"error": f"AI recommendation failed: {str(e)}"}), 500
+
+    @app.route('/api/user/ai_token', methods=['POST'])
+    def save_ai_token():
+        """Endpoint to save user's AI token"""
+        data = request.get_json()
+        user_id = 1  # Replace with actual user authentication
+        ai_token = data.get('ai_token')
+
+        if not ai_token:
+            return jsonify({"error": "AI token is required"}), 400
+
+        user = User.query.get_or_404(user_id)
+        user.ai_token = ai_token
+        db.session.commit()
+
+        return jsonify({"message": "AI token saved successfully"}), 200
+
+    @app.route('/api/user/ai_token', methods=['GET'])
+    def get_ai_token_status():
+        """Check if user has AI token configured"""
+        user_id = 1  # Replace with actual user authentication
+        user = User.query.get_or_404(user_id)
+
+        has_token = hasattr(user, 'ai_token') and user.ai_token is not None
+        return jsonify({"has_token": has_token}), 200
+
+
+def generate_ai_recommendations(api_token, collection_data, collection_type):
+    """Generate AI recommendations using OpenRouter API"""
+
+    # Create prompt based on collection type
+    if collection_type == 'media':
+        prompt = f"""
+        Based on the following movie/TV collection, recommend 10 similar titles that the user might enjoy.
+        For each recommendation, provide:
+        1. Title
+        2. Brief description (2-3 sentences)
+        3. Why it matches their collection
+        4. A review link (use IMDb, Rotten Tomatoes, or Metacritic)
+
+        Collection: {json.dumps(collection_data, indent=2)}
+
+        Please format the response as a JSON array with objects containing: title, description, reason, review_link
+        """
+    elif collection_type == 'books':
+        prompt = f"""
+        Based on the following book collection, recommend 10 similar books that the user might enjoy.
+        For each recommendation, provide:
+        1. Title
+        2. Author
+        3. Brief description (2-3 sentences)
+        4. Why it matches their collection
+        5. A review link (use Goodreads, Amazon, or literary review sites)
+
+        Collection: {json.dumps(collection_data, indent=2)}
+
+        Please format the response as a JSON array with objects containing: title, author, description, reason, review_link
+        """
+    elif collection_type == 'videogames':
+        prompt = f"""
+        Based on the following video game collection, recommend 10 similar games that the user might enjoy.
+        For each recommendation, provide:
+        1. Title
+        2. Brief description (2-3 sentences)
+        3. Why it matches their collection
+        4. A review link (use Metacritic, IGN, or GameSpot)
+
+        Collection: {json.dumps(collection_data, indent=2)}
+
+        Please format the response as a JSON array with objects containing: title, description, reason, review_link
+        """
+    else:
+        prompt = f"""
+        Based on the following general collection, recommend 10 similar items that the user might enjoy.
+        For each recommendation, provide:
+        1. Title
+        2. Brief description (2-3 sentences)
+        3. Why it matches their collection
+        4. A relevant review or information link
+
+        Collection: {json.dumps(collection_data, indent=2)}
+
+        Please format the response as a JSON array with objects containing: title, description, reason, review_link
+        """
+
+    headers = {
+        'Authorization': f'Bearer {api_token}',
+        'Content-Type': 'application/json'
+    }
+
+    payload = {
+        'model': "deepseek/deepseek-r1:free",  # You can change this to other models
+        'messages': [
+            {
+                'role': 'user',
+                'content': prompt
+            }
+        ],
+        'max_tokens': 2000,
+        'temperature': 0.7
+    }
+
+    response = requests.post('https://openrouter.ai/api/v1/chat/completions',
+                             headers=headers, json=payload)
+
+    if response.status_code != 200:
+        raise Exception(f"OpenRouter API error: {response.status_code} - {response.text}")
+
+    result = response.json()
+    content = result['choices'][0]['message']['content']
+
+    try:
+        # Try to parse the JSON response
+        recommendations = json.loads(content)
+        return recommendations
+    except json.JSONDecodeError:
+        # If JSON parsing fails, return a formatted error
+        raise Exception("AI response was not in valid JSON format")

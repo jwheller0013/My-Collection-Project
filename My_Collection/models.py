@@ -33,6 +33,7 @@ class User(db.Model):
             'username': self.username,
             'email': self.email,
             'password': self.password,
+            'has_ai_token': self.ai_token is not None,
             'collection': self.collection,
             'entries': self.entries
 
