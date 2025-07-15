@@ -1,7 +1,7 @@
 from flask import Flask
-from models import db, User, Genre
+from models import db, User, Collection, Entry, Media, Genre, Videogame, Book
 from os import path
-from routes import init_routes
+from routes import init_routes, init_ai_routes
 from flask_cors import CORS
 
 def create_app():
@@ -22,9 +22,12 @@ def create_app():
             db.create_all()
             print("Database tables created.")
             add_initial_genres(app) # Pass app to ensure context
+            add_initial_users(app)  # Add initial users when creating db
 
     # Register all routes
-    init_routes(app)
+    init_routes(app, db, User, Collection, Entry, Media, Genre, Videogame, Book)
+    init_ai_routes(app, db, User, Collection, Media, Book, Videogame, Entry)
+
 
     return app
 

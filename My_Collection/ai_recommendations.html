@@ -6,8 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Recommendations</title>
     <link rel="stylesheet" href="./koley.css?v=1" />
-    <script src="./ai_recommendations.js" async defer></script>
-    <script src="./settings-applier.js"></script>
     <style>
         .ai-container {
             max-width: 1200px;
@@ -36,6 +34,7 @@
             margin: 10px 0;
             border: 1px solid #ddd;
             border-radius: 4px;
+            box-sizing: border-box;
         }
 
         .recommendations-grid {
@@ -112,6 +111,7 @@
             padding: 15px;
             border-radius: 4px;
             margin: 20px 0;
+            border: 1px solid #ffcdd2;
         }
 
         .success {
@@ -120,6 +120,7 @@
             padding: 15px;
             border-radius: 4px;
             margin: 20px 0;
+            border: 1px solid #c8e6c9;
         }
 
         .btn {
@@ -131,6 +132,7 @@
             cursor: pointer;
             font-size: 16px;
             transition: background 0.2s;
+            margin-right: 10px;
         }
 
         .btn:hover {
@@ -150,9 +152,27 @@
             background: #7f8c8d;
         }
 
+        .text-center {
+            text-align: center;
+        }
+
+        .text-gray-600 {
+            color: #666;
+        }
+
         @media (max-width: 768px) {
             .recommendations-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .ai-container {
+                padding: 10px;
+            }
+
+            .btn {
+                margin-bottom: 10px;
+                display: block;
+                width: 100%;
             }
         }
     </style>
@@ -202,5 +222,9 @@
         <p><a href="scanner.html">Scan</a></p>
         <p><a id="back-to-collection" href="#">Back to Collection</a></p>
     </footer>
+
+    <!-- Load scripts after the DOM content -->
+    <script src="./settings-applier.js"></script>
+    <script src="./ai_recommendations.js"></script>
 </body>
 </html>

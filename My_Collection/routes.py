@@ -1,7 +1,7 @@
 import random
-
 import requests
 import json
+import re
 from flask import request, jsonify, send_from_directory, render_template
 from models import db, User, Collection, Entry, Media, Genre, Videogame, Book
 from tmdb_api import search_movie, get_movie_details, get_imdb_link_from_movie_id
@@ -10,7 +10,13 @@ from sqlalchemy.sql import func
 import os
 
 
-def init_routes(app):
+# Main function to initialize all routes
+def init_routes(app, db, User, Collection, Entry, Media, Genre, Videogame, Book):
+    """
+    Initializes all application routes, including general API, collection management,
+    and AI recommendations.
+    """
+
     @app.route('/hi', methods=['GET'])
     def hi():
         return "Hello, World!"
@@ -22,8 +28,6 @@ def init_routes(app):
 
     @app.route('/<path:filename>')
     def serve_static_files(filename):
-        import os
-
         # First check if file exists in parent directory (root)
         parent_file = os.path.join('..', filename)
         if os.path.exists(parent_file) and os.path.isfile(parent_file):
@@ -109,8 +113,6 @@ def init_routes(app):
 
     @app.route('/entries/<int:entry_id>', methods=['GET', 'PUT', 'DELETE'])
     def entry_detail(entry_id):
-        from sqlalchemy.orm import joinedload
-
         entry = Entry.query.options(joinedload(Entry.genres)).filter_by(id=entry_id).first()
         if not entry:
             return jsonify({"msg": "Entry not found"}), 404
@@ -132,7 +134,7 @@ def init_routes(app):
                 current_genre_ids = {genre.id for genre in entry.genres}
 
                 # Remove genres no longer selected
-                for genre in list(entry.genres): # Iterate over a copy to modify
+                for genre in list(entry.genres):  # Iterate over a copy to modify
                     if genre.id not in new_genre_ids:
                         entry.genres.remove(genre)
 
@@ -158,7 +160,7 @@ def init_routes(app):
                 return jsonify(entry.to_dict()), 200
             except Exception as e:
                 db.session.rollback()
-                print(f"Error updating entry {entry_id}: {e}") # Debugging
+                print(f"Error updating entry {entry_id}: {e}")  # Debugging
                 return jsonify({"msg": "Failed to update entry", "error": str(e)}), 500
 
         elif request.method == 'DELETE':
@@ -168,9 +170,8 @@ def init_routes(app):
                 return jsonify({"msg": "Entry deleted successfully"}), 200
             except Exception as e:
                 db.session.rollback()
-                print(f"Error deleting entry {entry_id}: {e}") # Debugging
+                print(f"Error deleting entry {entry_id}: {e}")  # Debugging
                 return jsonify({"msg": "Failed to delete entry", "error": str(e)}), 500
-
 
     @app.route('/genres', methods=['GET'])
     def get_genres():
@@ -187,7 +188,7 @@ def init_routes(app):
         return send_from_directory('.', 'collection_detail.html')
 
     @app.route('/collections/<int:collection_id>/detail')
-    def collection_detail_page(collection_id): # Renamed to avoid conflict with `get_collection`
+    def collection_detail_page(collection_id):  # Renamed to avoid conflict with `get_collection`
         return render_template('collection_detail.html', collection_id=collection_id)
 
     @app.route('/entry_detail.html')
@@ -237,8 +238,6 @@ def init_routes(app):
 
     @app.route('/collections/<int:collection_id>/sort')
     def sort_collection(collection_id):
-        from sqlalchemy.orm import joinedload
-
         sort_by = request.args.get('sort', 'alpha')
 
         collection = Collection.query.get_or_404(collection_id)
@@ -297,7 +296,7 @@ def init_routes(app):
 
         data = request.get_json()
         title = data.get('collection_title')
-        collection_type = data.get('collection_type', 'general') # Get type, default to 'general' if not provided
+        collection_type = data.get('collection_type', 'general')  # Get type, default to 'general' if not provided
 
         if not title:
             return jsonify({"msg": "Collection title is required"}), 400
@@ -443,7 +442,6 @@ def init_routes(app):
         db.session.add(new_entry)
         db.session.commit()
         return jsonify({"msg": "Entry created successfully", "entry_id": new_entry.id}), 201
-
 
     # API TMDB
     @app.route('/api/tmdb_import', methods=['POST'])
@@ -657,8 +655,6 @@ def init_routes(app):
 
     @app.route('/collections/<int:collection_id>/entries')
     def get_collection_entries(collection_id):
-        from sqlalchemy.orm import joinedload
-
         sort = request.args.get('sort', 'alpha')  # default to alphabetical
 
         collection = Collection.query.get_or_404(collection_id)
@@ -749,8 +745,6 @@ def init_routes(app):
 
     @app.route('/collections/<int:collection_id>/sort', methods=['GET'])
     def sort_collection_entries(collection_id):
-        from sqlalchemy.orm import joinedload
-
         sort_by = request.args.get('sort_by', 'alphabetical')
         collection = Collection.query.get_or_404(collection_id)
         entry_type = collection.collection_type.lower()
@@ -803,30 +797,75 @@ def init_routes(app):
         return jsonify(annotated_entries)
 
 
-###___AI___###
-def init_ai_routes(app):
+##AI##
+
+def parse_ai_response(ai_response_text):
+    """Parse AI response that may be wrapped in markdown code blocks"""
+
+    # First, try to parse as direct JSON
+    try:
+        return json.loads(ai_response_text)
+    except json.JSONDecodeError:
+        pass
+
+    # Try to extract JSON from markdown code blocks
+    json_match = re.search(r'```json\n(.*?)\n```', ai_response_text, re.DOTALL)
+    if json_match:
+        try:
+            json_string = json_match.group(1)
+            return json.loads(json_string)
+        except json.JSONDecodeError:
+            pass
+
+    # Try to extract JSON from any code blocks
+    json_match = re.search(r'```\n(.*?)\n```', ai_response_text, re.DOTALL)
+    if json_match:
+        try:
+            json_string = json_match.group(1)
+            return json.loads(json_string)
+        except json.JSONDecodeError:
+            pass
+
+    raise ValueError("Could not parse AI response as JSON")
+
+
+def init_ai_routes(app, db, User, Collection, Media, Book, Videogame, Entry):
+    """
+    Initializes AI-related routes for the Flask application.
+    """
+
+    print("Initializing AI routes...")  # Debug print
+
     @app.route('/ai_recommendations.html')
     def ai_recommendations_page():
+        """Serves the AI recommendations HTML page."""
         return send_from_directory('.', 'ai_recommendations.html')
 
     @app.route('/api/ai_recommendations', methods=['POST'])
     def get_ai_recommendations():
+        """
+        Generates AI recommendations based on a user's collection.
+        """
         data = request.get_json()
         collection_id = data.get('collection_id')
-        user_id = 1  # Replace with actual user authentication
+        user_id = 1  # Placeholder: Replace with actual user authentication
 
         if not collection_id:
             return jsonify({"error": "Collection ID is required"}), 400
 
-        # Get user's API token (you'll need to add this to your User model)
+        # Retrieve user and check for AI token
         user = User.query.get(user_id)
-        if not user or not hasattr(user, 'ai_token') or not user.ai_token:
+        if not user:
+            return jsonify({"error": "User not found."}), 404
+        if not hasattr(user, 'ai_token') or not user.ai_token:
             return jsonify({"error": "AI token not configured. Please add your OpenRouter API token in settings."}), 400
 
-        # Get collection and its entries
-        collection = Collection.query.get_or_404(collection_id)
+        # Get collection and its entries based on type
+        collection = Collection.query.get(collection_id)
+        if not collection:
+            return jsonify({"error": "Collection not found."}), 404
 
-        # Get entries based on collection type
+        entries = []
         if collection.collection_type == 'media':
             entries = Media.query.filter_by(collection_id=collection_id).all()
         elif collection.collection_type == 'books':
@@ -837,7 +876,7 @@ def init_ai_routes(app):
             entries = Entry.query.filter_by(collection_id=collection_id).all()
 
         if not entries:
-            return jsonify({"error": "No entries found in this collection"}), 404
+            return jsonify({"error": "No entries found in this collection to generate recommendations from."}), 404
 
         # Prepare collection data for AI analysis
         collection_data = []
@@ -845,10 +884,10 @@ def init_ai_routes(app):
             entry_info = {
                 'title': entry.title,
                 'overview': entry.overview,
-                'genres': [genre.name for genre in entry.genres] if entry.genres else []
+                'genres': [genre.name for genre in entry.genres] if hasattr(entry, 'genres') and entry.genres else []
             }
 
-            # Add type-specific information
+            # Add type-specific information if available
             if hasattr(entry, 'author'):
                 entry_info['author'] = entry.author
             if hasattr(entry, 'rating'):
@@ -858,7 +897,7 @@ def init_ai_routes(app):
 
             collection_data.append(entry_info)
 
-        # Generate AI recommendations
+        # Generate AI recommendations using the external API
         try:
             recommendations = generate_ai_recommendations(user.ai_token, collection_data, collection.collection_type)
             return jsonify({"recommendations": recommendations}), 200
@@ -867,36 +906,65 @@ def init_ai_routes(app):
 
     @app.route('/api/user/ai_token', methods=['POST'])
     def save_ai_token():
-        """Endpoint to save user's AI token"""
-        data = request.get_json()
-        user_id = 1  # Replace with actual user authentication
-        ai_token = data.get('ai_token')
+        """Endpoint to save user's AI token."""
+        print("POST /api/user/ai_token called")  # Debug print
 
-        if not ai_token:
-            return jsonify({"error": "AI token is required"}), 400
+        try:
+            data = request.get_json()
+            print(f"Received data: {data}")  # Debug print
 
-        user = User.query.get_or_404(user_id)
-        user.ai_token = ai_token
-        db.session.commit()
+            user_id = 1  # Placeholder: Replace with actual user authentication
+            ai_token = data.get('ai_token') if data else None
 
-        return jsonify({"message": "AI token saved successfully"}), 200
+            if not ai_token:
+                return jsonify({"error": "AI token is required"}), 400
+
+            # Find user by ID
+            user = User.query.get(user_id)
+            if not user:
+                return jsonify({"error": f"User with ID {user_id} not found."}), 404
+
+            # Check if User model has ai_token field
+            if not hasattr(user, 'ai_token'):
+                return jsonify(
+                    {"error": "User model does not have ai_token field. Please update your database schema."}), 500
+
+            user.ai_token = ai_token
+            db.session.commit()
+
+            return jsonify({"message": "AI token saved successfully"}), 200
+
+        except Exception as e:
+            print(f"Error in save_ai_token: {str(e)}")  # Debug print
+            return jsonify({"error": f"Internal server error: {str(e)}"}), 500
 
     @app.route('/api/user/ai_token', methods=['GET'])
     def get_ai_token_status():
-        """Check if user has AI token configured"""
-        user_id = 1  # Replace with actual user authentication
-        user = User.query.get_or_404(user_id)
+        """Checks if the user has an AI token configured."""
+        print("GET /api/user/ai_token called")  # Debug print
 
-        has_token = hasattr(user, 'ai_token') and user.ai_token is not None
+        user_id = 1  # Placeholder: Replace with actual user authentication
+
+        # Find user by ID
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"error": f"User with ID {user_id} not found."}), 404
+
+        # Check if the user object has an ai_token attribute
+        has_token = hasattr(user, 'ai_token') and user.ai_token is not None and user.ai_token != ''
         return jsonify({"has_token": has_token}), 200
+
+    print("AI routes initialized successfully")  # Debug print
 
 
 def generate_ai_recommendations(api_token, collection_data, collection_type):
-    """Generate AI recommendations using OpenRouter API"""
+    """
+    Generates AI recommendations by calling the OpenRouter API.
+    """
 
-    # Create prompt based on collection type
-    if collection_type == 'media':
-        prompt = f"""
+    # Create a dynamic prompt based on the collection type
+    prompt_templates = {
+        'media': """
         Based on the following movie/TV collection, recommend 10 similar titles that the user might enjoy.
         For each recommendation, provide:
         1. Title
@@ -904,12 +972,11 @@ def generate_ai_recommendations(api_token, collection_data, collection_type):
         3. Why it matches their collection
         4. A review link (use IMDb, Rotten Tomatoes, or Metacritic)
 
-        Collection: {json.dumps(collection_data, indent=2)}
+        Collection: {collection_json}
 
         Please format the response as a JSON array with objects containing: title, description, reason, review_link
-        """
-    elif collection_type == 'books':
-        prompt = f"""
+        """,
+        'books': """
         Based on the following book collection, recommend 10 similar books that the user might enjoy.
         For each recommendation, provide:
         1. Title
@@ -918,12 +985,11 @@ def generate_ai_recommendations(api_token, collection_data, collection_type):
         4. Why it matches their collection
         5. A review link (use Goodreads, Amazon, or literary review sites)
 
-        Collection: {json.dumps(collection_data, indent=2)}
+        Collection: {collection_json}
 
         Please format the response as a JSON array with objects containing: title, author, description, reason, review_link
-        """
-    elif collection_type == 'videogames':
-        prompt = f"""
+        """,
+        'videogames': """
         Based on the following video game collection, recommend 10 similar games that the user might enjoy.
         For each recommendation, provide:
         1. Title
@@ -931,12 +997,11 @@ def generate_ai_recommendations(api_token, collection_data, collection_type):
         3. Why it matches their collection
         4. A review link (use Metacritic, IGN, or GameSpot)
 
-        Collection: {json.dumps(collection_data, indent=2)}
+        Collection: {collection_json}
 
         Please format the response as a JSON array with objects containing: title, description, reason, review_link
-        """
-    else:
-        prompt = f"""
+        """,
+        'default': """
         Based on the following general collection, recommend 10 similar items that the user might enjoy.
         For each recommendation, provide:
         1. Title
@@ -944,10 +1009,16 @@ def generate_ai_recommendations(api_token, collection_data, collection_type):
         3. Why it matches their collection
         4. A relevant review or information link
 
-        Collection: {json.dumps(collection_data, indent=2)}
+        Collection: {collection_json}
 
         Please format the response as a JSON array with objects containing: title, description, reason, review_link
         """
+    }
+
+    # Select the appropriate prompt template or fall back to default
+    prompt = prompt_templates.get(collection_type, prompt_templates['default']).format(
+        collection_json=json.dumps(collection_data, indent=2)
+    )
 
     headers = {
         'Authorization': f'Bearer {api_token}',
@@ -955,7 +1026,7 @@ def generate_ai_recommendations(api_token, collection_data, collection_type):
     }
 
     payload = {
-        'model': "deepseek/deepseek-r1:free",  # You can change this to other models
+        'model': "deepseek/deepseek-r1:free",
         'messages': [
             {
                 'role': 'user',
@@ -966,19 +1037,22 @@ def generate_ai_recommendations(api_token, collection_data, collection_type):
         'temperature': 0.7
     }
 
+    # Make the API call to OpenRouter
     response = requests.post('https://openrouter.ai/api/v1/chat/completions',
                              headers=headers, json=payload)
 
+    # Check for non-200 status codes from OpenRouter API
     if response.status_code != 200:
         raise Exception(f"OpenRouter API error: {response.status_code} - {response.text}")
 
     result = response.json()
+    # Extract the content from the AI's response
     content = result['choices'][0]['message']['content']
 
     try:
-        # Try to parse the JSON response
-        recommendations = json.loads(content)
+        # Use the new parse_ai_response function here
+        recommendations = parse_ai_response(content)
         return recommendations
-    except json.JSONDecodeError:
-        # If JSON parsing fails, return a formatted error
-        raise Exception("AI response was not in valid JSON format")
+    except ValueError as e: # Catch the specific ValueError raised by parse_ai_response
+        # If JSON parsing fails, raise an error indicating malformed AI response
+        raise Exception(f"AI response was not in valid JSON format: {content}. Error: {e}")

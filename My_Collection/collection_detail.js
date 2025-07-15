@@ -1,6 +1,7 @@
 const API_URL = `http://localhost:8080`;
 const ENTRIES_LIST_ID = 'entries-list';
 const COLLECTION_TITLE_ID = 'collection-title';
+const AI_RECOMMENDATIONS_LINK_ID = 'ai-recommendations-link'; // New ID for the AI recommendations link
 
 function getCollectionIdFromUrl() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -11,7 +12,16 @@ function fetchCollectionDetails(collectionId) {
     fetch(`${API_URL}/collections/${collectionId}`)
         .then(res => {
             if (!res.ok) {
-                throw new Error(`HTTP error! status: ${res.status}`);
+                // Check if the response is JSON before parsing
+                const contentType = res.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    return res.json().then(errorData => {
+                        throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
+                    });
+                } else {
+                    // If not JSON, just throw a generic error
+                    throw new Error(`HTTP error! status: ${res.status} - Non-JSON response`);
+                }
             }
             return res.json();
         })
@@ -135,12 +145,20 @@ const handleRandomCollectionEntryClick = (event) => {
         });
 };
 
+// New function to update the AI Recommendations link
+function updateAiRecommendationsLink(collectionId) {
+    const aiRecLink = document.getElementById(AI_RECOMMENDATIONS_LINK_ID);
+    if (aiRecLink) {
+        aiRecLink.href = `/My_Collection/ai_recommendations.html?collectionid=${collectionId}`;
+    }
+}
 
 function handlePage() {
     const collectionId = getCollectionIdFromUrl();
     if (collectionId) {
         fetchCollectionDetails(collectionId);
         updateSortLink(collectionId);
+        updateAiRecommendationsLink(collectionId); // Call the new function here
 
         // Attach event listener for the NEW "Random Entry from this Collection" button
         const randomCollectionEntryLink = document.getElementById('random-collection-entry-link');

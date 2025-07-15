@@ -10,6 +10,7 @@ class User(db.Model):
     username = db.Column(db.String(64), unique=True, nullable=False)
     password = db.Column(db.Text)
     email = db.Column(db.String(64), unique=True, nullable=False)
+    ai_token = db.Column(db.String(255), nullable=True)
     collection = db.relationship('Collection', backref='user', lazy=True)
     entries = db.relationship('Entry', backref='user', lazy=True)
 
